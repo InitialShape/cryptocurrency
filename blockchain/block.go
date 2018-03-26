@@ -28,12 +28,21 @@ func (b *Block) GetCBOR() (bytes.Buffer, error) {
 	return buffer, err
 }
 
-func (b *Block) GetHash() (string, error) {
+func (b *Block) GetHash() ([]byte, error) {
 	block, err := b.GetCBOR()
 	if err != nil {
-		return "", err
+		log.Fatal("Error encoding to CBOR %s", err)
+		return []byte{}, err
 	}
 	hasher := sha256.New()
 	hasher.Write(block.Bytes())
-	return base58.Encode(hasher.Sum(nil)), err
+	return hasher.Sum(nil), err
+}
+
+func (b *Block) GetBase58Hash() (string, error) {
+	hash, err := b.GetHash()
+	if err != nil {
+		return "", err
+	}
+	return base58.Encode(hash), err
 }

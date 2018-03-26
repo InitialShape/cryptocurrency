@@ -23,9 +23,9 @@ func TestMarshal(t *testing.T) {
 	assert.Equal(t, marshalledBlock, buffer)
 }
 
-func TestGetHash(t *testing.T) {
+func TestBlockGetBase58Hash(t *testing.T) {
 	block := Block{0, "abc", nil, ""}
-	hash, err := block.GetHash()
+	hash, err := block.GetBase58Hash()
 	if err != nil {
 		t.Error(err)
 	}
