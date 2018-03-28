@@ -33,6 +33,7 @@ func main() {
 	}
 
 	db.Put(block.Hash, cbor.Bytes(), nil)
+	db.Put([]byte("root"), block.Hash, nil)
 	db.Close()
 
 	base58Hash, err := block.GetBase58Hash()

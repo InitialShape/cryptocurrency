@@ -61,5 +61,4 @@ func TestUnmarshal(t *testing.T) {
 	}
 
 	assert.Equal(t, block, newBlock)
-
 }
