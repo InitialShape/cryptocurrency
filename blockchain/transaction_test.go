@@ -5,36 +5,39 @@ import (
 	"golang.org/x/crypto/ed25519"
 	"crypto/rand"
 	"github.com/stretchr/testify/assert"
+	"github.com/mr-tron/base58/base58"
 )
 
-func TestGenesis(t *testing.T) {
+const PUBLIC_KEY = "mVHLEtFHLYQE7mwvkhkUp9uKqq5VDCMLvjYtePtMix5"
+
+func TestCoinbaseTransaction(t *testing.T) {
 	publicKey, _, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		t.Error(err)
 	}
-	transaction := Genesis(publicKey, 100)
+	transaction := GenerateCoinbase(publicKey, 100)
 
 	outputs := []Output{Output{publicKey, 100}}
 	inputs := []Input{Input{[]byte{}, "", 0}}
-	expected := Transaction{"", inputs, outputs}
+	expected := Transaction{[]byte{}, inputs, outputs}
 
 	assert.Equal(t, transaction, expected)
 }
 
 func TestTransactionGetBase58Hash(t *testing.T) {
-	publicKey, _, err := ed25519.GenerateKey(rand.Reader)
+	publicKey, err := base58.Decode(PUBLIC_KEY)
 	if err != nil {
 		t.Error(err)
 	}
 	outputs := []Output{Output{publicKey, 100}}
 	inputs := []Input{Input{[]byte{}, "", 0}}
-	transaction := Transaction{"", inputs, outputs}
+	transaction := Transaction{[]byte{}, inputs, outputs}
 	hash, err := transaction.GetBase58Hash()
 	if err != nil {
 		t.Error(err)
 	}
 
-	assert.Equal(t, hash, "JcDex1mjA9nUawCutP2oaTrzLby9L6ezZscLL1xdmY5")
+	assert.Equal(t, "3cqbiEKWBZpTYc3D6GTrguBRevhhcowbgdxZAdVApd5U", hash)
 }
 
 func TestTransactionSign(t *testing.T) {
@@ -44,7 +47,7 @@ func TestTransactionSign(t *testing.T) {
 	}
 	outputs := []Output{Output{publicKey, 100}}
 	inputs := []Input{Input{[]byte{}, "", 0}}
-	transaction := Transaction{"", inputs, outputs}
+	transaction := Transaction{[]byte{}, inputs, outputs}
 	hash, err := transaction.GetHash()
 	signature := ed25519.Sign(privateKey, hash)
 	transaction.Sign(privateKey, 0)

@@ -2,7 +2,7 @@ package blockchain
 
 import (
 	"golang.org/x/crypto/ed25519"
-	"github.com/2tvenom/cbor"
+	cbor "github.com/whyrusleeping/cbor/go"
 	"bytes"
 	"log"
 	"crypto/sha256"
@@ -10,43 +10,44 @@ import (
 )
 
 type Input struct {
-	Signature []byte
-	TransactionHash string
-	OutputID int
+	Signature []byte		`json:"signature"`
+	TransactionHash string	`json:"transaction_hash"`
+	OutputID int			`json:"output_id"`
 }
 
 type Output struct {
-	PublicKey ed25519.PublicKey
-	Amount int
+	PublicKey ed25519.PublicKey	`json:"public_key"`
+	Amount int					`json:"amount"`
 }
 
 type Transaction struct {
-	Hash string
-	Inputs []Input
-	Outputs []Output
+	Hash []byte					`json:"hash"`
+	Inputs []Input				`json:"inputs"`
+	Outputs []Output			`json:"outputs"`
 }
 
-func Genesis(publicKey ed25519.PublicKey, amount int)  (Transaction) {
+func GenerateCoinbase(publicKey ed25519.PublicKey, amount int)  (Transaction) {
 	outputs := []Output{Output{publicKey, amount}}
 	inputs := []Input{Input{[]byte{}, "", 0}}
-	transaction := Transaction{"", inputs, outputs}
+	transaction := Transaction{[]byte{}, inputs, outputs}
 	return transaction
 }
 
-func (t *Transaction) GetCBOR() (bytes.Buffer, error) {
-	var buffer bytes.Buffer
-	encoder := cbor.NewEncoder(&buffer)
-	ok, err := encoder.Marshal(t)
+func (t *Transaction) GetCBOR() (*bytes.Buffer, error) {
+	buf := new(bytes.Buffer)
+	enc := cbor.NewEncoder(buf)
+	err := enc.Encode(t)
 
-	if !ok {
+	if err != nil {
 		log.Fatal("Error decoding %s", err)
-		return bytes.Buffer{}, err
+		return new(bytes.Buffer), err
 	}
 
-	return buffer, err
+	return buf, err
 }
 
 func (t *Transaction) GetHash() ([]byte, error) {
+	t.Hash = []byte{}
 	transaction, err := t.GetCBOR()
 	if err != nil {
 		return []byte{}, err
