@@ -8,6 +8,7 @@ import (
 	"crypto/rand"
 	"log"
 	"fmt"
+	"net/http"
 )
 
 const LEVEL_DB = "db"
@@ -40,5 +41,6 @@ func main() {
 	}
 	fmt.Println(base58Hash)
 
-	server.Launch()
+	r := server.Handlers()
+	log.Fatal(http.ListenAndServe(":8000", r))
 }

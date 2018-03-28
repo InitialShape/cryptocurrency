@@ -9,6 +9,7 @@ import (
 	"log"
 	"bytes"
 	"github.com/InitialShape/blockchain/blockchain"
+	"github.com/davecgh/go-spew/spew"
 	cbor "github.com/whyrusleeping/cbor/go"
 )
 
@@ -51,8 +52,22 @@ func GetBlock(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(block)
 }
 
-func Launch() {
-	router := mux.NewRouter()
-	router.HandleFunc("/blocks/{hash}", GetBlock).Methods("GET")
-	log.Fatal(http.ListenAndServe(":8000", router))
+
+func PutBlock(w http.ResponseWriter, r *http.Request) {
+	dec := json.NewDecoder(r.Body)
+	var block blockchain.Block
+	err := dec.Decode(&block)
+	if err != nil {
+		log.Fatal(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - couldn't decode block"))
+	}
+	spew.Dump(block)
+}
+
+func Handlers() *mux.Router {
+	r := mux.NewRouter()
+	r.HandleFunc("/blocks/{hash}", GetBlock).Methods("GET")
+	r.HandleFunc("/blocks", PutBlock).Methods("PUT")
+	return r
 }
