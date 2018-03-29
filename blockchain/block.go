@@ -21,7 +21,9 @@ type Block struct {
 
 const COINBASE_AMOUNT = 25
 
-func GenerateGenesisBlock(publicKey ed25519.PublicKey, privateKey ed25519.PrivateKey) (Block, error) {
+func GenerateGenesisBlock(publicKey ed25519.PublicKey,
+						  privateKey ed25519.PrivateKey,
+						  difficulty int) (Block, error) {
 	coinbase := GenerateCoinbase(publicKey, COINBASE_AMOUNT)
 	err := coinbase.Sign(privateKey, 0)
 	if err != nil {
@@ -29,7 +31,8 @@ func GenerateGenesisBlock(publicKey ed25519.PublicKey, privateKey ed25519.Privat
 	}
 
 	// change this to a static nonce once mining algorithm is implemented
-	block := Block{0, []byte{}, []Transaction{coinbase}, []byte{}, 3, 1}
+	block := Block{0, []byte{}, []Transaction{coinbase}, []byte{}, difficulty,
+				   1}
 	hash, err := block.GetHash()
 	if err != nil {
 		return Block{}, err
@@ -73,13 +76,18 @@ func (b *Block) GetBase58Hash() (string, error) {
 }
 
 func HashMatchesDifficulty(hash []byte, difficulty int) bool {
-	for i, n := range hash {
-		prefix := fmt.Sprintf("%b", n)
-		if prefix != "0" && i < difficulty {
+	var hashBinary bytes.Buffer
+	for _, n := range hash {
+		hashBinary.WriteString(fmt.Sprintf("%08b", n))
+	}
+
+	hashString := hashBinary.String()
+	for i, char := range hashString {
+		if char != '0' && i < difficulty {
 			return false
 		}
 
-		if prefix == "0" && i == difficulty {
+		if char == '0' && i == difficulty {
 			break
 		}
 	}

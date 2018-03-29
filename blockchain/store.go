@@ -6,10 +6,41 @@ import (
 	cbor "github.com/whyrusleeping/cbor/go"
 	"errors"
 	"bytes"
+	"github.com/mr-tron/base58/base58"
 )
 
 type Store struct {
 	DB string
+}
+
+func (s *Store) StoreGenesisBlock(difficulty int) (error) {
+	publicKey, _ := base58.Decode("6zjRZQyp47BjwArFoLpvzo8SHwwWeW571kJNiqWfSrFT")
+	privateKey, _ := base58.Decode("35DxrJipeuCAakHNnnPkBjwxQffYWKM1632kUFv9vKGRNREFSyM6awhyrucxTNbo9h693nPKeWonJ9sFkw6Tou4d")
+
+	block, err := GenerateGenesisBlock(publicKey, privateKey, difficulty)
+	if err != nil {
+		return err
+	}
+
+	db, err := leveldb.OpenFile(s.DB, nil)
+	if err != nil {
+		return err
+	}
+	cbor, err := block.GetCBOR()
+	if err != nil {
+		return err
+	}
+
+	db.Put(block.Hash, cbor.Bytes(), nil)
+	db.Put([]byte("root"), block.Hash, nil)
+	db.Close()
+
+	base58Hash, err := block.GetBase58Hash()
+	if err != nil {
+		return err
+	}
+	fmt.Println(base58Hash)
+	return err
 }
 
 func (s *Store) AddBlock(block Block) (error) {
@@ -19,7 +50,7 @@ func (s *Store) AddBlock(block Block) (error) {
 		return err
 	}
 
-	data, err := db.Get([]byte("root"), nil)
+	data, err := db.Get(block.PreviousBlock, nil)
 	if err != nil {
 		return err
 	}
@@ -27,7 +58,6 @@ func (s *Store) AddBlock(block Block) (error) {
 	var root Block
 	dec := cbor.NewDecoder(bytes.NewReader(data))
 	err = dec.Decode(&root)
-
 
 	if HashMatchesDifficulty(block.Hash, root.Difficulty) {
 		cbor, err := block.GetCBOR()
@@ -40,7 +70,7 @@ func (s *Store) AddBlock(block Block) (error) {
 
 		fmt.Println("Put new block as root with hash and difficulty ", root.Difficulty)
 		for _, n := range block.Hash {
-			fmt.Printf("%b", n)
+			fmt.Printf("%08b", n)
 		}
 		return err
 	} else {

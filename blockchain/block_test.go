@@ -34,7 +34,7 @@ func TestBlockGetBase58Hash(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	expected := "8peBAxqs9Hsq9TTQHUebgR6iLAUeJcXx4CFw6pJ8aVR9"
+	expected := "DzqgSYkaavhwvZvaoRVbRnkeiK5FbTohPmZ9WCazuLmc"
 	assert.Equal(t, expected, hash)
 }
 
@@ -43,7 +43,7 @@ func TestUnmarshal(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	block, err := GenerateGenesisBlock(publicKey, privateKey)
+	block, err := GenerateGenesisBlock(publicKey, privateKey, 3)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -63,4 +63,18 @@ func TestUnmarshal(t *testing.T) {
 	}
 
 	assert.Equal(t, block, newBlock)
+}
+
+func TestHashMatchesDifficulty(t *testing.T) {
+	hash := []byte{0x1F, 0x00} // 00011111 00000000
+	assert.True(t, HashMatchesDifficulty(hash, 3))
+
+	hash = []byte{0x0F, 0x00} // 00001111 00000000
+	assert.True(t, HashMatchesDifficulty(hash, 4))
+
+	hash = []byte{0x2F, 0x00} // 00101111 00000000
+	assert.False(t, HashMatchesDifficulty(hash, 4))
+
+	hash = []byte{0x00, 0x7F} // 00000000 01111111
+	assert.True(t, HashMatchesDifficulty(hash, 9))
 }

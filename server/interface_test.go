@@ -2,16 +2,16 @@ package server
 
 import (
 	"bytes"
-	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"github.com/InitialShape/blockchain/blockchain"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/crypto/ed25519"
+	"github.com/mr-tron/base58/base58"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"github.com/InitialShape/blockchain/miner"
 )
 
 var (
@@ -28,21 +28,22 @@ func init() {
 }
 
 func TestPutBlock(t *testing.T) {
-	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	store := blockchain.Store{LEVEL_DB}
+	err := store.StoreGenesisBlock(3)
+	genesis, err := base58.Decode("6gMgy5V3nyQyue8wWXqo3buiZcXzwR3qNgv5SexeGZLG")
+
+	ch := make(chan blockchain.Block)
+	go miner.GenerateBlock(2, 2, genesis, ch)
+	newBlock := <-ch
+
+	newBlockJSON, err := json.Marshal(newBlock)
 	if err != nil {
 		t.Error(err)
 	}
-	block, err := blockchain.GenerateGenesisBlock(publicKey, privateKey)
-	if err != nil {
-		t.Error(err)
-	}
-	b, err := json.Marshal(block)
-	if err != nil {
-		t.Error(err)
-	}
+	fmt.Println(string(newBlockJSON))
 
 	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodPut, blocksUrl, bytes.NewReader(b))
+	req, err := http.NewRequest(http.MethodPut, blocksUrl, bytes.NewReader(newBlockJSON))
 	if err != nil {
 		t.Error(err)
 	}
@@ -68,11 +69,12 @@ func TestPutBlock(t *testing.T) {
 		t.Error(err)
 	}
 
+	fmt.Println(string(body))
 	var root blockchain.Block
 	err = json.Unmarshal(body, &root)
 	if err != nil {
 		t.Error(err)
 	}
 
-	assert.Equal(t, block, root)
+	assert.Equal(t, newBlock, root)
 }
