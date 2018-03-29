@@ -1,23 +1,23 @@
 package server
 
 import (
-	"testing"
-	"net/http/httptest"
-	"github.com/InitialShape/blockchain/blockchain"
-	"encoding/json"
-	"net/http"
-	"fmt"
 	"bytes"
-	"golang.org/x/crypto/ed25519"
 	"crypto/rand"
-	"io/ioutil"
+	"encoding/json"
+	"fmt"
+	"github.com/InitialShape/blockchain/blockchain"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/ed25519"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 )
 
 var (
-	server *httptest.Server
+	server    *httptest.Server
 	blocksUrl string
-	rootUrl string
+	rootUrl   string
 )
 
 func init() {
@@ -76,4 +76,3 @@ func TestPutBlock(t *testing.T) {
 
 	assert.Equal(t, block, root)
 }
-

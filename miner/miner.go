@@ -1,14 +1,14 @@
 package main
 
 import (
-	"os"
-	"github.com/davecgh/go-spew/spew"
-	"log"
-	"io/ioutil"
-	"net/http"
+	"encoding/json"
 	"fmt"
 	"github.com/InitialShape/blockchain/blockchain"
-	"encoding/json"
+	"github.com/davecgh/go-spew/spew"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"os"
 )
 
 func main() {
@@ -36,14 +36,14 @@ func main() {
 
 	nonce := 0
 	for {
-		newBlock := blockchain.Block{block.Height+1, []byte{}, []blockchain.Transaction{},
-						  previousBlock, difficulty, nonce}
+		newBlock := blockchain.Block{block.Height + 1, []byte{}, []blockchain.Transaction{},
+			previousBlock, difficulty, nonce}
 		hash, err := newBlock.GetHash()
 		if err != nil {
 			log.Fatal(err)
 		}
 		if blockchain.HashMatchesDifficulty(hash, difficulty) {
-			for _, n := range(hash) {
+			for _, n := range hash {
 				fmt.Printf("%b", n)
 			}
 			break

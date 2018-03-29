@@ -1,16 +1,16 @@
 package server
 
 import (
-	"net/http"
-	"github.com/gorilla/mux"
-	"github.com/syndtr/goleveldb/leveldb"
-	"encoding/json"
-	"github.com/mr-tron/base58/base58"
-	"log"
 	"bytes"
-	"github.com/InitialShape/blockchain/blockchain"
-	cbor "github.com/whyrusleeping/cbor/go"
+	"encoding/json"
 	"fmt"
+	"github.com/InitialShape/blockchain/blockchain"
+	"github.com/gorilla/mux"
+	"github.com/mr-tron/base58/base58"
+	"github.com/syndtr/goleveldb/leveldb"
+	cbor "github.com/whyrusleeping/cbor/go"
+	"log"
+	"net/http"
 )
 
 const LEVEL_DB = "db"
@@ -87,7 +87,6 @@ func GetRootBlock(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(block)
 }
 
-
 func PutBlock(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(r.Body)
 	var block blockchain.Block
@@ -113,7 +112,6 @@ func PutBlock(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 }
-
 
 func Handlers() *mux.Router {
 	r := mux.NewRouter()

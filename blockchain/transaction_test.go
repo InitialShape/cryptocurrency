@@ -1,11 +1,11 @@
 package blockchain
 
 import (
-	"testing"
-	"golang.org/x/crypto/ed25519"
 	"crypto/rand"
-	"github.com/stretchr/testify/assert"
 	"github.com/mr-tron/base58/base58"
+	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/ed25519"
+	"testing"
 )
 
 const PUBLIC_KEY = "mVHLEtFHLYQE7mwvkhkUp9uKqq5VDCMLvjYtePtMix5"

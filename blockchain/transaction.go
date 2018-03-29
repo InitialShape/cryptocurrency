@@ -1,32 +1,32 @@
 package blockchain
 
 import (
-	"golang.org/x/crypto/ed25519"
-	cbor "github.com/whyrusleeping/cbor/go"
 	"bytes"
-	"log"
 	"crypto/sha256"
 	"github.com/mr-tron/base58/base58"
+	cbor "github.com/whyrusleeping/cbor/go"
+	"golang.org/x/crypto/ed25519"
+	"log"
 )
 
 type Input struct {
-	Signature []byte		`json:"signature"`
-	TransactionHash string	`json:"transaction_hash"`
-	OutputID int			`json:"output_id"`
+	Signature       []byte `json:"signature"`
+	TransactionHash string `json:"transaction_hash"`
+	OutputID        int    `json:"output_id"`
 }
 
 type Output struct {
-	PublicKey ed25519.PublicKey	`json:"public_key"`
-	Amount int					`json:"amount"`
+	PublicKey ed25519.PublicKey `json:"public_key"`
+	Amount    int               `json:"amount"`
 }
 
 type Transaction struct {
-	Hash []byte					`json:"hash"`
-	Inputs []Input				`json:"inputs"`
-	Outputs []Output			`json:"outputs"`
+	Hash    []byte   `json:"hash"`
+	Inputs  []Input  `json:"inputs"`
+	Outputs []Output `json:"outputs"`
 }
 
-func GenerateCoinbase(publicKey ed25519.PublicKey, amount int)  (Transaction) {
+func GenerateCoinbase(publicKey ed25519.PublicKey, amount int) Transaction {
 	outputs := []Output{Output{publicKey, amount}}
 	inputs := []Input{Input{[]byte{}, "", 0}}
 	transaction := Transaction{[]byte{}, inputs, outputs}
@@ -65,7 +65,7 @@ func (t *Transaction) GetBase58Hash() (string, error) {
 	return base58.Encode(hash), err
 }
 
-func (t *Transaction) Sign(privateKey ed25519.PrivateKey, index int) (error) {
+func (t *Transaction) Sign(privateKey ed25519.PrivateKey, index int) error {
 	hash, err := t.GetHash()
 	signature := ed25519.Sign(privateKey, hash)
 	t.Inputs[index].Signature = signature

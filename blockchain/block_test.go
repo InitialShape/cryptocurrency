@@ -1,13 +1,13 @@
 package blockchain
 
 import (
-	"testing"
 	"bytes"
+	"crypto/rand"
 	"github.com/stretchr/testify/assert"
+	cbor "github.com/whyrusleeping/cbor/go"
 	"golang.org/x/crypto/ed25519"
 	"log"
-	"crypto/rand"
-	cbor "github.com/whyrusleeping/cbor/go"
+	"testing"
 )
 
 func TestMarshal(t *testing.T) {

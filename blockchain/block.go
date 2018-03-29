@@ -2,21 +2,21 @@ package blockchain
 
 import (
 	"bytes"
-	"log"
 	"crypto/sha256"
-	"github.com/mr-tron/base58/base58"
-	"golang.org/x/crypto/ed25519"
-	cbor "github.com/whyrusleeping/cbor/go"
 	"fmt"
+	"github.com/mr-tron/base58/base58"
+	cbor "github.com/whyrusleeping/cbor/go"
+	"golang.org/x/crypto/ed25519"
+	"log"
 )
 
 type Block struct {
-	Height        int			`json:"height"`
-	Hash		  []byte		`json:"hash"`
-	Transactions  []Transaction	`json:"transactions"`
-	PreviousBlock []byte		`json:"previous_block"`
-	Difficulty int				`json:"difficulty"`
-	Nonce int					`json:"nounce"`
+	Height        int           `json:"height"`
+	Hash          []byte        `json:"hash"`
+	Transactions  []Transaction `json:"transactions"`
+	PreviousBlock []byte        `json:"previous_block"`
+	Difficulty    int           `json:"difficulty"`
+	Nonce         int           `json:"nounce"`
 }
 
 const COINBASE_AMOUNT = 25
@@ -73,7 +73,7 @@ func (b *Block) GetBase58Hash() (string, error) {
 }
 
 func HashMatchesDifficulty(hash []byte, difficulty int) bool {
-	for i, n := range(hash) {
+	for i, n := range hash {
 		prefix := fmt.Sprintf("%b", n)
 		if prefix != "0" && i < difficulty {
 			return false
