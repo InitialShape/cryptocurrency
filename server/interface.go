@@ -3,7 +3,6 @@ package server
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/InitialShape/blockchain/blockchain"
 	"github.com/gorilla/mux"
 	"github.com/mr-tron/base58/base58"
@@ -96,19 +95,13 @@ func PutBlock(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("500 - couldn't decode block"))
 	}
-	db, err := leveldb.OpenFile(LEVEL_DB, nil)
-	defer db.Close()
+	store := blockchain.Store{LEVEL_DB}
+	err = store.AddBlock(block)
 	if err != nil {
 		log.Fatal(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - block's difficulty doesn't match"))
 	}
-	cbor, err := block.GetCBOR()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	db.Put(block.Hash, cbor.Bytes(), nil)
-	db.Put([]byte("root"), block.Hash, nil)
-	fmt.Println("Put new block as root with hash ", block.Hash)
 
 	w.WriteHeader(http.StatusCreated)
 }

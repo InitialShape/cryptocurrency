@@ -16,7 +16,7 @@ type Block struct {
 	Transactions  []Transaction `json:"transactions"`
 	PreviousBlock []byte        `json:"previous_block"`
 	Difficulty    int           `json:"difficulty"`
-	Nonce         int           `json:"nounce"`
+	Nonce         int32         `json:"nonce"`
 }
 
 const COINBASE_AMOUNT = 25

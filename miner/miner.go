@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"encoding/binary"
+	"crypto/rand"
 	"fmt"
 	"github.com/InitialShape/blockchain/blockchain"
 	"github.com/davecgh/go-spew/spew"
@@ -28,14 +30,24 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	spew.Dump("Found block: ", block)
 
 	difficulty := block.Difficulty
 	spew.Dump("Difficulty is ", difficulty)
 	previousBlock := block.Hash
 
-	nonce := 0
+	ch := make(chan blockchain.Block)
+	for i := 0; i < 4; i++ {
+		go generateBlock(block, difficulty, previousBlock, ch)
+	}
+	newBlock := <-ch
+	spew.Dump(newBlock)
+}
+
+func generateBlock(block blockchain.Block, difficulty int, previousBlock []byte, ch chan<- blockchain.Block) {
 	for {
+		var nonce int32
+		binary.Read(rand.Reader, binary.LittleEndian, &nonce)
+
 		newBlock := blockchain.Block{block.Height + 1, []byte{}, []blockchain.Transaction{},
 			previousBlock, difficulty, nonce}
 		hash, err := newBlock.GetHash()
@@ -46,10 +58,15 @@ func main() {
 			for _, n := range hash {
 				fmt.Printf("%b", n)
 			}
+			newBlock.Hash = hash
+			ch <- newBlock
 			break
 		} else {
-			fmt.Println("Need to work more")
 			nonce += 1
 		}
 	}
+}
+
+func SubmitBlock(block blockchain.Block) {
+
 }
