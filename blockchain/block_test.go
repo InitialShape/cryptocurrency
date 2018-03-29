@@ -11,7 +11,8 @@ import (
 )
 
 func TestMarshal(t *testing.T) {
-	block := Block{0, []byte{}, nil, "", 1}
+	// change this to a static nonce once mining algorithm is implemented
+	block := Block{0, []byte{}, nil, []byte{}, 1, 1}
 	marshalledBlock, err := block.GetCBOR()
 	if err != nil {
 		t.Error(err)
@@ -27,12 +28,13 @@ func TestMarshal(t *testing.T) {
 }
 
 func TestBlockGetBase58Hash(t *testing.T) {
-	block := Block{0, []byte{}, nil, "", 1}
+	// change this to a static nonce once mining algorithm is implemented
+	block := Block{0, []byte{}, nil, []byte{}, 1, 1}
 	hash, err := block.GetBase58Hash()
 	if err != nil {
 		t.Error(err)
 	}
-	expected := "wdnX1DXTvrfkPuGHed3B4m8eTYeP7E8evegqkzwtn9T"
+	expected := "8peBAxqs9Hsq9TTQHUebgR6iLAUeJcXx4CFw6pJ8aVR9"
 	assert.Equal(t, expected, hash)
 }
 
