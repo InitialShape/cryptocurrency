@@ -11,7 +11,7 @@ const LEVEL_DB = "db"
 
 func main() {
 	store := blockchain.Store{LEVEL_DB}
-	err := store.StoreGenesisBlock(10)
+	_, err := store.StoreGenesisBlock(10)
 	if err != nil {
 		log.Fatal(err)
 	}

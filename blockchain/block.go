@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"bytes"
+	"strings"
 	"crypto/sha256"
 	"fmt"
 	"github.com/mr-tron/base58/base58"
@@ -56,6 +57,7 @@ func (b *Block) GetCBOR() (*bytes.Buffer, error) {
 }
 
 func (b *Block) GetHash() ([]byte, error) {
+	hash := b.Hash
 	b.Hash = []byte{}
 	block, err := b.GetCBOR()
 	if err != nil {
@@ -64,6 +66,7 @@ func (b *Block) GetHash() ([]byte, error) {
 	}
 	hasher := sha256.New()
 	hasher.Write(block.Bytes())
+	b.Hash = hash
 	return hasher.Sum(nil), err
 }
 
@@ -77,19 +80,18 @@ func (b *Block) GetBase58Hash() (string, error) {
 
 func HashMatchesDifficulty(hash []byte, difficulty int) bool {
 	var hashBinary bytes.Buffer
+	var prefix bytes.Buffer
 	for _, n := range hash {
 		hashBinary.WriteString(fmt.Sprintf("%08b", n))
 	}
 
-	hashString := hashBinary.String()
-	for i, char := range hashString {
-		if char != '0' && i < difficulty {
-			return false
-		}
-
-		if char == '0' && i == difficulty {
-			break
-		}
+	for i := 0; i < difficulty; i++ {
+		prefix.WriteString("0")
 	}
-	return true
+
+
+	prefixString := prefix.String()
+	hashString := hashBinary.String()
+
+	return strings.HasPrefix(hashString, prefixString)
 }

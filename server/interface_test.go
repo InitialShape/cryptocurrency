@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/InitialShape/blockchain/blockchain"
 	"github.com/stretchr/testify/assert"
-	"github.com/mr-tron/base58/base58"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -29,18 +28,19 @@ func init() {
 
 func TestPutBlock(t *testing.T) {
 	store := blockchain.Store{LEVEL_DB}
-	err := store.StoreGenesisBlock(3)
-	genesis, err := base58.Decode("6gMgy5V3nyQyue8wWXqo3buiZcXzwR3qNgv5SexeGZLG")
+	genesis, err := store.StoreGenesisBlock(5)
+	if err != nil {
+		t.Error(err)
+	}
 
 	ch := make(chan blockchain.Block)
-	go miner.GenerateBlock(2, 2, genesis, ch)
+	go miner.GenerateBlock(2, 5, genesis, ch)
 	newBlock := <-ch
 
 	newBlockJSON, err := json.Marshal(newBlock)
 	if err != nil {
 		t.Error(err)
 	}
-	fmt.Println(string(newBlockJSON))
 
 	client := &http.Client{}
 	req, err := http.NewRequest(http.MethodPut, blocksUrl, bytes.NewReader(newBlockJSON))

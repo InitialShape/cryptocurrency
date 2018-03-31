@@ -72,6 +72,9 @@ func TestHashMatchesDifficulty(t *testing.T) {
 	hash = []byte{0x0F, 0x00} // 00001111 00000000
 	assert.True(t, HashMatchesDifficulty(hash, 4))
 
+	hash = []byte{0x0F, 0x00} // 00001111 00000000
+	assert.True(t, HashMatchesDifficulty(hash, 3))
+
 	hash = []byte{0x2F, 0x00} // 00101111 00000000
 	assert.False(t, HashMatchesDifficulty(hash, 4))
 
