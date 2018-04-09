@@ -17,7 +17,7 @@ func TestPutBlock(t *testing.T) {
 	}
 
 	ch := make(chan blockchain.Block)
-	go miner.GenerateBlock(2, 5, genesis, ch)
+	go miner.SearchBlock(2, 5, genesis, ch)
 	newBlock := <-ch
 
 	err = store.AddBlock(newBlock)
@@ -35,7 +35,7 @@ func TestPutBlockWithTooLowDifficulty(t *testing.T) {
 	}
 
 	ch := make(chan blockchain.Block)
-	go miner.GenerateBlock(2, 5, genesis, ch)
+	go miner.SearchBlock(2, 5, genesis, ch)
 	newBlock := <-ch
 
 	err = store.AddBlock(newBlock)
