@@ -8,10 +8,55 @@ import (
 	"bytes"
 	"github.com/mr-tron/base58/base58"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/dgraph-io/badger"
 )
 
 type Store struct {
 	DB string
+}
+
+func (s *Store) Put(key []byte, value []byte) error {
+	opts := badger.DefaultOptions
+	opts.Dir = s.DB
+	opts.ValueDir = s.DB
+	db, err := badger.Open(opts)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	err = db.Update(func(txn *badger.Txn) error {
+		err := txn.Set(key, value)
+		return err
+	})
+
+	return err
+}
+
+func (s *Store) Get(key []byte) ([]byte, error) {
+	opts := badger.DefaultOptions
+	opts.Dir = s.DB
+	opts.ValueDir = s.DB
+	db, err := badger.Open(opts)
+	if err != nil {
+		return []byte{}, err
+	}
+	defer db.Close()
+
+	var data []byte
+	err = db.View(func(txn *badger.Txn) error {
+		item, err := txn.Get(key)
+		if err != nil {
+			return err
+		}
+		val, err := item.Value()
+		if err != nil {
+			return err
+		}
+		data = append(data, val...)
+		return nil
+	})
+
+	return data, err
 }
 
 func (s *Store) StoreGenesisBlock(difficulty int) ([]byte, error) {

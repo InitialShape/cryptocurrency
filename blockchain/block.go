@@ -61,7 +61,7 @@ func (b *Block) GetHash() ([]byte, error) {
 	b.Hash = []byte{}
 	block, err := b.GetCBOR()
 	if err != nil {
-		log.Fatal("Error encoding to CBOR %s", err)
+		log.Fatal("Error encoding to CBOR", err)
 		return []byte{}, err
 	}
 	hasher := sha256.New()

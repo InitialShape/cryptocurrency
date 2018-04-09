@@ -39,7 +39,7 @@ func (t *Transaction) GetCBOR() (*bytes.Buffer, error) {
 	err := enc.Encode(t)
 
 	if err != nil {
-		log.Fatal("Error decoding %s", err)
+		log.Fatal("Error decoding ", err)
 		return new(bytes.Buffer), err
 	}
 
