@@ -13,6 +13,17 @@ import (
 
 const DB = "/tmp/hello"
 
+var Store blockchain.Store
+
+func Handlers(store blockchain.Store) *mux.Router {
+	Store = store
+	r := mux.NewRouter()
+	r.HandleFunc("/blocks/{hash}", GetBlock).Methods("GET")
+	r.HandleFunc("/blocks", PutBlock).Methods("PUT")
+	r.HandleFunc("/root", GetRootBlock).Methods("GET")
+	return r
+}
+
 func GetBlock(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
@@ -23,8 +34,7 @@ func GetBlock(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("500 - Couldn't decode base58"))
 	}
 
-	store := blockchain.Store{DB}
-	data, err := store.Get(hash)
+	data, err := Store.Get(hash)
 	if err != nil {
 		log.Fatal(err)
 		w.WriteHeader(http.StatusNotFound)
@@ -44,15 +54,14 @@ func GetBlock(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetRootBlock(w http.ResponseWriter, r *http.Request) {
-	store := blockchain.Store{DB}
-	hash, err := store.Get([]byte("root"))
+	hash, err := Store.Get([]byte("root"))
 	if err != nil {
 		log.Fatal(err)
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("root wasn't found"))
 	}
 
-	blockData, err := store.Get(hash)
+	blockData, err := Store.Get(hash)
 	if err != nil {
 		log.Fatal(err)
 		w.WriteHeader(http.StatusNotFound)
@@ -80,8 +89,7 @@ func PutBlock(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("500 - couldn't decode block"))
 	}
-	store := blockchain.Store{DB}
-	err = store.AddBlock(block)
+	err = Store.AddBlock(block)
 	if err != nil {
 		log.Fatal(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -91,10 +99,3 @@ func PutBlock(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func Handlers() *mux.Router {
-	r := mux.NewRouter()
-	r.HandleFunc("/blocks/{hash}", GetBlock).Methods("GET")
-	r.HandleFunc("/blocks", PutBlock).Methods("PUT")
-	r.HandleFunc("/root", GetRootBlock).Methods("GET")
-	return r
-}

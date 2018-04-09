@@ -10,23 +10,23 @@ import (
 )
 
 type Store struct {
-	DB string
+	DB *badger.DB
 }
 
-func (s *Store) Open() (badger.DB, error) {
+func (s *Store) Open(location string) error {
 	opts := badger.DefaultOptions
-	opts.Dir = s.DB
-	opts.ValueDir = s.DB
+	opts.Dir = location
+	opts.ValueDir = location
 	db, err := badger.Open(opts)
 	if err != nil {
-		return db, err
+		return err
 	}
-	defer db.Close()
-	return db, err
+	s.DB = db
+	return err
 }
 
 func (s *Store) Put(key []byte, value []byte) error {
-	err = db.Update(func(txn *badger.Txn) error {
+	err := s.DB.Update(func(txn *badger.Txn) error {
 		err := txn.Set(key, value)
 		return err
 	})
@@ -35,17 +35,8 @@ func (s *Store) Put(key []byte, value []byte) error {
 }
 
 func (s *Store) Get(key []byte) ([]byte, error) {
-	opts := badger.DefaultOptions
-	opts.Dir = s.DB
-	opts.ValueDir = s.DB
-	db, err := badger.Open(opts)
-	if err != nil {
-		return []byte{}, err
-	}
-	defer db.Close()
-
 	var data []byte
-	err = db.View(func(txn *badger.Txn) error {
+	err := s.DB.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(key)
 		if err != nil {
 			return err
