@@ -9,6 +9,12 @@ import (
 )
 
 func main() {
+	for {
+		mine()
+	}
+}
+
+func mine() {
 	ch := make(chan blockchain.Block)
 	workers, err := strconv.Atoi(os.Args[2])
 	if err != nil {
