@@ -7,10 +7,9 @@ import (
 	"github.com/InitialShape/blockchain/blockchain"
 )
 
-const DB = "/tmp/badger"
+const DB = "badger"
 
 func TestPutBlock(t *testing.T) {
-	t.Skip()
 	store := blockchain.Store{DB}
 	genesis, err := store.StoreGenesisBlock(5)
 	if err != nil {

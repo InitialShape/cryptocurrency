@@ -87,7 +87,7 @@ func SubmitBlock(block blockchain.Block) {
 	}
 
 	if res.StatusCode != 201 {
-		errors.New(fmt.Sprintf("Expected status code 201 but got %s",
+		errors.New(fmt.Sprintf("Expected status code 201 but got %d",
 							   res.StatusCode))
 	}
 }

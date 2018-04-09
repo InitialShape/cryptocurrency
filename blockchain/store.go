@@ -1,13 +1,11 @@
 package blockchain
 
 import (
-	"github.com/syndtr/goleveldb/leveldb"
 	"fmt"
 	cbor "github.com/whyrusleeping/cbor/go"
 	"errors"
 	"bytes"
 	"github.com/mr-tron/base58/base58"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/dgraph-io/badger"
 )
 
@@ -15,15 +13,19 @@ type Store struct {
 	DB string
 }
 
-func (s *Store) Put(key []byte, value []byte) error {
+func (s *Store) Open() (badger.DB, error) {
 	opts := badger.DefaultOptions
 	opts.Dir = s.DB
 	opts.ValueDir = s.DB
 	db, err := badger.Open(opts)
 	if err != nil {
-		return err
+		return db, err
 	}
 	defer db.Close()
+	return db, err
+}
+
+func (s *Store) Put(key []byte, value []byte) error {
 	err = db.Update(func(txn *badger.Txn) error {
 		err := txn.Set(key, value)
 		return err
@@ -68,24 +70,19 @@ func (s *Store) StoreGenesisBlock(difficulty int) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	db, err := leveldb.OpenFile(s.DB, nil)
-	if err != nil {
-		return []byte{}, err
-	}
 	cbor, err := block.GetCBOR()
 	if err != nil {
 		return []byte{}, err
 	}
 
-	err = db.Put(block.Hash, cbor.Bytes(), nil)
+	err = s.Put(block.Hash, cbor.Bytes())
 	if err != nil {
 		return []byte{}, err
 	}
-	err = db.Put([]byte("root"), block.Hash, nil)
+	err = s.Put([]byte("root"), block.Hash)
 	if err != nil {
 		return []byte{}, err
 	}
-	db.Close()
 
 	base58Hash, err := block.GetBase58Hash()
 	if err != nil {
@@ -96,14 +93,7 @@ func (s *Store) StoreGenesisBlock(difficulty int) ([]byte, error) {
 }
 
 func (s *Store) AddBlock(block Block) (error) {
-	db, err := leveldb.OpenFile(s.DB, nil)
-	defer db.Close()
-	if err != nil {
-		return err
-	}
-
-	spew.Dump(block)
-	data, err := db.Get(block.PreviousBlock, nil)
+	data, err := s.Get(block.PreviousBlock)
 	if err != nil {
 		return err
 	}
@@ -118,8 +108,14 @@ func (s *Store) AddBlock(block Block) (error) {
 			return err
 		}
 
-		db.Put(block.Hash, cbor.Bytes(), nil)
-		db.Put([]byte("root"), block.Hash, nil)
+		err = s.Put(block.Hash, cbor.Bytes())
+		if err != nil {
+			return err
+		}
+		err = s.Put([]byte("root"), block.Hash)
+		if err != nil {
+			return err
+		}
 
 		fmt.Println("Put new block as root with hash and difficulty ", root.Difficulty)
 		for _, n := range block.Hash {

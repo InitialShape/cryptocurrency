@@ -6,24 +6,15 @@ import (
 	"github.com/InitialShape/blockchain/blockchain"
 	"github.com/gorilla/mux"
 	"github.com/mr-tron/base58/base58"
-	"github.com/syndtr/goleveldb/leveldb"
 	cbor "github.com/whyrusleeping/cbor/go"
 	"log"
 	"net/http"
 )
 
-const LEVEL_DB = "db"
+const DB = "/tmp/hello"
 
 func GetBlock(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-
-	db, err := leveldb.OpenFile(LEVEL_DB, nil)
-	defer db.Close()
-	if err != nil {
-		log.Fatal("database not found", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - leveldb couldn't be opened"))
-	}
 
 	hash, err := base58.Decode(params["hash"])
 	if err != nil {
@@ -32,7 +23,8 @@ func GetBlock(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("500 - Couldn't decode base58"))
 	}
 
-	data, err := db.Get(hash, nil)
+	store := blockchain.Store{DB}
+	data, err := store.Get(hash)
 	if err != nil {
 		log.Fatal(err)
 		w.WriteHeader(http.StatusNotFound)
@@ -52,22 +44,15 @@ func GetBlock(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetRootBlock(w http.ResponseWriter, r *http.Request) {
-	db, err := leveldb.OpenFile(LEVEL_DB, nil)
-	defer db.Close()
-	if err != nil {
-		log.Fatal("database not found", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - leveldb couldn't be opened"))
-	}
-
-	hash, err := db.Get([]byte("root"), nil)
+	store := blockchain.Store{DB}
+	hash, err := store.Get([]byte("root"))
 	if err != nil {
 		log.Fatal(err)
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("root wasn't found"))
 	}
 
-	blockData, err := db.Get(hash, nil)
+	blockData, err := store.Get(hash)
 	if err != nil {
 		log.Fatal(err)
 		w.WriteHeader(http.StatusNotFound)
@@ -95,7 +80,7 @@ func PutBlock(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("500 - couldn't decode block"))
 	}
-	store := blockchain.Store{LEVEL_DB}
+	store := blockchain.Store{DB}
 	err = store.AddBlock(block)
 	if err != nil {
 		log.Fatal(err)

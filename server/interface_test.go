@@ -27,7 +27,7 @@ func init() {
 }
 
 func TestPutBlock(t *testing.T) {
-	store := blockchain.Store{LEVEL_DB}
+	store := blockchain.Store{DB}
 	genesis, err := store.StoreGenesisBlock(5)
 	if err != nil {
 		t.Error(err)
@@ -53,7 +53,7 @@ func TestPutBlock(t *testing.T) {
 	}
 
 	if res.StatusCode != 201 {
-		t.Errorf("Expected status code 201 but got ", res.StatusCode)
+		t.Errorf("Expected status code 201 but got %d", res.StatusCode)
 	}
 
 	req, err = http.NewRequest(http.MethodGet, rootUrl, nil)
