@@ -7,10 +7,16 @@ import (
 	"github.com/InitialShape/blockchain/blockchain"
 )
 
-const DB = "badger"
+const DB = "/tmp/db"
+
+var store blockchain.Store
+
+func init() {
+	store = blockchain.Store{}
+	store.Open(DB)
+}
 
 func TestPutBlock(t *testing.T) {
-	store := blockchain.Store{DB}
 	genesis, err := store.StoreGenesisBlock(5)
 	if err != nil {
 		t.Error(err)
@@ -28,7 +34,6 @@ func TestPutBlock(t *testing.T) {
 
 func TestPutBlockWithTooLowDifficulty(t *testing.T) {
 	t.Skip()
-	store := blockchain.Store{DB}
 	genesis, err := store.StoreGenesisBlock(6)
 	if err != nil {
 		t.Error(err)
@@ -43,14 +48,16 @@ func TestPutBlockWithTooLowDifficulty(t *testing.T) {
 }
 
 func TestPutAndGetData(t *testing.T) {
-	store := blockchain.Store{DB}
 	expected := []byte("def")
-	err := store.Put([]byte("abc"), expected)
+	err := store.Put([]byte("123"), []byte("abc"), expected)
 	if err != nil {
 		t.Error(err)
 	}
 
-	data, err := store.Get([]byte("abc"))
+	data, err := store.Get([]byte("123"), []byte("abc"))
+	if err != nil {
+		t.Error(err)
+	}
 
 	assert.Equal(t, data, expected)
 }

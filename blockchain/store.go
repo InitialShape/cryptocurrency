@@ -6,18 +6,16 @@ import (
 	"errors"
 	"bytes"
 	"github.com/mr-tron/base58/base58"
-	"github.com/dgraph-io/badger"
+	"github.com/boltdb/bolt"
+	"time"
 )
 
 type Store struct {
-	DB *badger.DB
+	DB *bolt.DB
 }
 
 func (s *Store) Open(location string) error {
-	opts := badger.DefaultOptions
-	opts.Dir = location
-	opts.ValueDir = location
-	db, err := badger.Open(opts)
+	db, err := bolt.Open(location, 0600, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
 		return err
 	}
@@ -25,27 +23,25 @@ func (s *Store) Open(location string) error {
 	return err
 }
 
-func (s *Store) Put(key []byte, value []byte) error {
-	err := s.DB.Update(func(txn *badger.Txn) error {
-		err := txn.Set(key, value)
+func (s *Store) Put(bucket []byte, key []byte, value []byte) error {
+	err := s.DB.Update(func(tx *bolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists(bucket)
+		if err != nil {
+			return err
+		}
+		err = b.Put(key, value)
 		return err
 	})
 
 	return err
 }
 
-func (s *Store) Get(key []byte) ([]byte, error) {
+func (s *Store) Get(bucket []byte, key []byte) ([]byte, error) {
 	var data []byte
-	err := s.DB.View(func(txn *badger.Txn) error {
-		item, err := txn.Get(key)
-		if err != nil {
-			return err
-		}
-		val, err := item.Value()
-		if err != nil {
-			return err
-		}
-		data = append(data, val...)
+	err := s.DB.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucket)
+		v := b.Get(key)
+		data = append(data, v...)
 		return nil
 	})
 
@@ -66,11 +62,11 @@ func (s *Store) StoreGenesisBlock(difficulty int) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	err = s.Put(block.Hash, cbor.Bytes())
+	err = s.Put([]byte("blocks"), block.Hash, cbor.Bytes())
 	if err != nil {
 		return []byte{}, err
 	}
-	err = s.Put([]byte("root"), block.Hash)
+	err = s.Put([]byte("blocks"), []byte("root"), block.Hash)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -84,7 +80,7 @@ func (s *Store) StoreGenesisBlock(difficulty int) ([]byte, error) {
 }
 
 func (s *Store) AddBlock(block Block) (error) {
-	data, err := s.Get(block.PreviousBlock)
+	data, err := s.Get([]byte("blocks"), block.PreviousBlock)
 	if err != nil {
 		return err
 	}
@@ -92,6 +88,9 @@ func (s *Store) AddBlock(block Block) (error) {
 	var root Block
 	dec := cbor.NewDecoder(bytes.NewReader(data))
 	err = dec.Decode(&root)
+	if err != nil {
+		return err
+	}
 
 	if HashMatchesDifficulty(block.Hash, root.Difficulty) {
 		cbor, err := block.GetCBOR()
@@ -99,11 +98,11 @@ func (s *Store) AddBlock(block Block) (error) {
 			return err
 		}
 
-		err = s.Put(block.Hash, cbor.Bytes())
+		err = s.Put([]byte("blocks"), block.Hash, cbor.Bytes())
 		if err != nil {
 			return err
 		}
-		err = s.Put([]byte("root"), block.Hash)
+		err = s.Put([]byte("blocks"), []byte("root"), block.Hash)
 		if err != nil {
 			return err
 		}

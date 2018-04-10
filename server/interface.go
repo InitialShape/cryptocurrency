@@ -34,11 +34,11 @@ func GetBlock(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("500 - Couldn't decode base58"))
 	}
 
-	data, err := Store.Get(hash)
+	data, err := Store.Get([]byte("blocks"), hash)
 	if err != nil {
 		log.Fatal(err)
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("hash wasn't found"))
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - couldn't get block"))
 	}
 
 	var block blockchain.Block
@@ -54,18 +54,18 @@ func GetBlock(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetRootBlock(w http.ResponseWriter, r *http.Request) {
-	hash, err := Store.Get([]byte("root"))
+	hash, err := Store.Get([]byte("blocks"), []byte("root"))
 	if err != nil {
 		log.Fatal(err)
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("root wasn't found"))
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - couldn't get block"))
 	}
 
-	blockData, err := Store.Get(hash)
+	blockData, err := Store.Get([]byte("blocks"), hash)
 	if err != nil {
 		log.Fatal(err)
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("root data wasn't found"))
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - couldn't get block"))
 	}
 
 	var block blockchain.Block
