@@ -66,6 +66,62 @@ func TestPutTransaction(t *testing.T) {
 	}
 }
 
+func TestGetTransaction(t *testing.T) {
+	publicKey, _ := base58.Decode("6zjRZQyp47BjwArFoLpvzo8SHwwWeW571kJNiqWfSrFT")
+	outputs := []blockchain.Output{blockchain.Output{publicKey, 10}}
+	inputs := []blockchain.Input{blockchain.Input{[]byte{}, "", 0}}
+	transaction := blockchain.Transaction{[]byte{}, inputs, outputs}
+	hash, err := transaction.GetHash()
+	if err != nil {
+		t.Error(err)
+	}
+	transaction.Hash = hash
+
+	transactionJSON, err := json.Marshal(transaction)
+	if err != nil {
+		t.Error(err)
+	}
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodPut, transactionsUrl,
+								bytes.NewReader(transactionJSON))
+	if err != nil {
+		t.Error(err)
+	}
+	res, err := client.Do(req)
+	if err != nil {
+		t.Error(err)
+	}
+	if res.StatusCode != 201 {
+		t.Errorf("Expected status code 201 but got %d", res.StatusCode)
+	}
+
+	base58, err := transaction.GetBase58Hash()
+	if err != nil {
+		t.Error(err)
+	}
+	transactionUrl := fmt.Sprintf("%s/%s", transactionsUrl, base58)
+	fmt.Println(transactionUrl)
+	req, err = http.NewRequest(http.MethodGet, transactionUrl, nil)
+	if err != nil {
+		t.Error(err)
+	}
+	res, err = client.Do(req)
+	if err != nil {
+		t.Error(err)
+	}
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		t.Error(err)
+	}
+	var remoteTransaction blockchain.Transaction
+	err = json.Unmarshal(body, &remoteTransaction)
+	if err != nil {
+		t.Error(err)
+	}
+
+	assert.Equal(t, transaction, remoteTransaction)
+}
+
 func TestPutBlock(t *testing.T) {
 	genesis, err := store.StoreGenesisBlock(5)
 	if err != nil {

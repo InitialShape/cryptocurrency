@@ -5,7 +5,10 @@ import (
 	"github.com/InitialShape/blockchain/miner"
 	"github.com/stretchr/testify/assert"
 	"github.com/InitialShape/blockchain/blockchain"
+	"github.com/mr-tron/base58/base58"
 	"log"
+	"bytes"
+	cbor "github.com/whyrusleeping/cbor/go"
 )
 
 const DB = "/tmp/db"
@@ -64,4 +67,31 @@ func TestPutAndGetData(t *testing.T) {
 	}
 
 	assert.Equal(t, data, expected)
+}
+
+func TestAddTransaction(t *testing.T) {
+	publicKey, _ := base58.Decode("6zjRZQyp47BjwArFoLpvzo8SHwwWeW571kJNiqWfSrFT")
+	outputs := []blockchain.Output{blockchain.Output{publicKey, 10}}
+	inputs := []blockchain.Input{blockchain.Input{[]byte{}, "", 0}}
+	transaction := blockchain.Transaction{[]byte{}, inputs, outputs}
+	hash, err := transaction.GetHash()
+	if err != nil {
+		t.Error(err)
+	}
+	transaction.Hash = hash
+	store.AddTransaction(transaction)
+
+	data, err := store.Get([]byte("transactions"), transaction.Hash)
+	if err != nil {
+		t.Error(err)
+	}
+	var storeTransaction blockchain.Transaction
+	dec := cbor.NewDecoder(bytes.NewReader(data))
+	err = dec.Decode(&storeTransaction)
+	if err != nil {
+		t.Error(err)
+	}
+
+	assert.Equal(t, transaction, storeTransaction)
+
 }

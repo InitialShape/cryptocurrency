@@ -21,8 +21,28 @@ func Handlers(store blockchain.Store) *mux.Router {
 	r.HandleFunc("/blocks/{hash}", GetBlock).Methods("GET")
 	r.HandleFunc("/blocks", PutBlock).Methods("PUT")
 	r.HandleFunc("/transactions", PutTransaction).Methods("PUT")
+	r.HandleFunc("/transactions/{hash}", GetTransaction).Methods("GET")
 	r.HandleFunc("/root", GetRootBlock).Methods("GET")
 	return r
+}
+
+func GetTransaction(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+
+	hash, err := base58.Decode(params["hash"])
+	if err != nil {
+		log.Fatal(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - Couldn't decode base58"))
+	}
+
+	transaction, err := Store.GetTransaction(hash)
+	if err != nil {
+		log.Fatal(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - couldn't get transaction"))
+	}
+	json.NewEncoder(w).Encode(transaction)
 }
 
 func GetBlock(w http.ResponseWriter, r *http.Request) {

@@ -89,6 +89,22 @@ func (s *Store) AddTransaction(transaction Transaction) error {
 	return err
 }
 
+func (s *Store) GetTransaction(hash []byte) (Transaction, error) {
+	data, err := s.Get([]byte("transactions"), hash)
+	if err != nil {
+		return Transaction{}, err
+	}
+
+	var transaction Transaction
+	dec := cbor.NewDecoder(bytes.NewReader(data))
+	err = dec.Decode(&transaction)
+	if err != nil {
+		return Transaction{}, err
+	}
+
+	return transaction, err
+}
+
 func (s *Store) AddBlock(block Block) error {
 	data, err := s.Get([]byte("blocks"), block.PreviousBlock)
 	if err != nil {
