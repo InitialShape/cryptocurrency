@@ -105,6 +105,32 @@ func (s *Store) GetTransaction(hash []byte) (Transaction, error) {
 	return transaction, err
 }
 
+func (s *Store) GetTransactions() ([]Transaction, error) {
+	var transactions []Transaction
+
+	err := s.DB.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("transactions"))
+
+		b.ForEach(func(k, v []byte) error {
+			var transaction Transaction
+			dec := cbor.NewDecoder(bytes.NewReader(v))
+			err := dec.Decode(&transaction)
+			if err != nil {
+				return err
+			}
+			transactions = append(transactions, transaction)
+
+			return nil
+		})
+		return nil
+	})
+	if err != nil {
+		return []Transaction{}, err
+	}
+
+	return transactions, err
+}
+
 func (s *Store) AddBlock(block Block) error {
 	data, err := s.Get([]byte("blocks"), block.PreviousBlock)
 	if err != nil {

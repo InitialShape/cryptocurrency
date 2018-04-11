@@ -6,6 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/InitialShape/blockchain/blockchain"
 	"github.com/mr-tron/base58/base58"
+	"crypto/rand"
+	"golang.org/x/crypto/ed25519"
 	"log"
 	"bytes"
 	cbor "github.com/whyrusleeping/cbor/go"
@@ -67,6 +69,32 @@ func TestPutAndGetData(t *testing.T) {
 	}
 
 	assert.Equal(t, data, expected)
+}
+
+func TestGetTransactions(t *testing.T) {
+	// NOTE: This test is not ideal. It just tests if the new transaction is
+	// contained in the result set. Instead, it should create a new database,
+	// add multiple transactions and then check for equal.
+	publicKey, _, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Error(err)
+	}
+
+	outputs := []blockchain.Output{blockchain.Output{publicKey, 10}}
+	inputs := []blockchain.Input{blockchain.Input{[]byte{}, "", 0}}
+	transaction := blockchain.Transaction{[]byte{}, inputs, outputs}
+	hash, err := transaction.GetHash()
+	if err != nil {
+		t.Error(err)
+	}
+	transaction.Hash = hash
+	store.AddTransaction(transaction)
+
+	storeTransactions, err := store.GetTransactions()
+	if err != nil {
+		t.Error(err)
+	}
+	assert.Contains(t, storeTransactions, transaction)
 }
 
 func TestAddTransaction(t *testing.T) {
