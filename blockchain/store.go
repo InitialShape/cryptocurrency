@@ -79,7 +79,17 @@ func (s *Store) StoreGenesisBlock(difficulty int) ([]byte, error) {
 	return block.Hash, err
 }
 
-func (s *Store) AddBlock(block Block) (error) {
+func (s *Store) AddTransaction(transaction Transaction) error {
+	cbor, err := transaction.GetCBOR()
+	if err != nil {
+		return err
+	}
+
+	err = s.Put([]byte("transactions"), transaction.Hash, cbor.Bytes())
+	return err
+}
+
+func (s *Store) AddBlock(block Block) error {
 	data, err := s.Get([]byte("blocks"), block.PreviousBlock)
 	if err != nil {
 		return err

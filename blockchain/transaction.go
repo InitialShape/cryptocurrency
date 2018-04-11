@@ -47,6 +47,7 @@ func (t *Transaction) GetCBOR() (*bytes.Buffer, error) {
 }
 
 func (t *Transaction) GetHash() ([]byte, error) {
+	hash := t.Hash
 	t.Hash = []byte{}
 	transaction, err := t.GetCBOR()
 	if err != nil {
@@ -54,6 +55,7 @@ func (t *Transaction) GetHash() ([]byte, error) {
 	}
 	hasher := sha256.New()
 	hasher.Write(transaction.Bytes())
+	t.Hash = hash
 	return hasher.Sum(nil), err
 }
 

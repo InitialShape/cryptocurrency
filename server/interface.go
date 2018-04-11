@@ -11,7 +11,7 @@ import (
 	"net/http"
 )
 
-const DB = "/tmp/hello"
+const DB = "/tmp/lala"
 
 var Store blockchain.Store
 
@@ -20,6 +20,7 @@ func Handlers(store blockchain.Store) *mux.Router {
 	r := mux.NewRouter()
 	r.HandleFunc("/blocks/{hash}", GetBlock).Methods("GET")
 	r.HandleFunc("/blocks", PutBlock).Methods("PUT")
+	r.HandleFunc("/transactions", PutTransaction).Methods("PUT")
 	r.HandleFunc("/root", GetRootBlock).Methods("GET")
 	return r
 }
@@ -99,3 +100,21 @@ func PutBlock(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+func PutTransaction(w http.ResponseWriter, r *http.Request) {
+	dec := json.NewDecoder(r.Body)
+	var transaction blockchain.Transaction
+	err := dec.Decode(&transaction)
+	if err != nil {
+		log.Fatal(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - couldn't decode transaction"))
+	}
+	err = Store.AddTransaction(transaction)
+	if err != nil {
+		log.Fatal(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(""))
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}

@@ -5,6 +5,7 @@ import (
 	"github.com/InitialShape/blockchain/miner"
 	"github.com/stretchr/testify/assert"
 	"github.com/InitialShape/blockchain/blockchain"
+	"log"
 )
 
 const DB = "/tmp/db"
@@ -13,7 +14,10 @@ var store blockchain.Store
 
 func init() {
 	store = blockchain.Store{}
-	store.Open(DB)
+	err := store.Open(DB)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func TestPutBlock(t *testing.T) {
