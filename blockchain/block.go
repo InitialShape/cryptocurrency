@@ -2,13 +2,13 @@ package blockchain
 
 import (
 	"bytes"
-	"strings"
 	"crypto/sha256"
 	"fmt"
 	"github.com/mr-tron/base58/base58"
 	cbor "github.com/whyrusleeping/cbor/go"
 	"golang.org/x/crypto/ed25519"
 	"log"
+	"strings"
 )
 
 type Block struct {
@@ -23,8 +23,8 @@ type Block struct {
 const COINBASE_AMOUNT = 25
 
 func GenerateGenesisBlock(publicKey ed25519.PublicKey,
-						  privateKey ed25519.PrivateKey,
-						  difficulty int) (Block, error) {
+	privateKey ed25519.PrivateKey,
+	difficulty int) (Block, error) {
 	coinbase := GenerateCoinbase(publicKey, COINBASE_AMOUNT)
 	err := coinbase.Sign(privateKey, 0)
 	if err != nil {
@@ -33,7 +33,7 @@ func GenerateGenesisBlock(publicKey ed25519.PublicKey,
 
 	// change this to a static nonce once mining algorithm is implemented
 	block := Block{0, []byte{}, []Transaction{coinbase}, []byte{}, difficulty,
-				   1}
+		1}
 	hash, err := block.GetHash()
 	if err != nil {
 		return Block{}, err
@@ -88,7 +88,6 @@ func HashMatchesDifficulty(hash []byte, difficulty int) bool {
 	for i := 0; i < difficulty; i++ {
 		prefix.WriteString("0")
 	}
-
 
 	prefixString := prefix.String()
 	hashString := hashBinary.String()

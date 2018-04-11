@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/InitialShape/blockchain/server"
 	"github.com/InitialShape/blockchain/blockchain"
+	"github.com/InitialShape/blockchain/web"
 	"log"
 	"net/http"
 )
@@ -18,6 +18,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	r := server.Handlers(store)
+	r := web.Handlers(store)
 	log.Fatal(http.ListenAndServe(":8000", r))
 }

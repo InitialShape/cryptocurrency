@@ -2,17 +2,18 @@ package main
 
 import (
 	"bytes"
+	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/InitialShape/blockchain/blockchain"
-	"net/http"
-	"log"
-	"crypto/rand"
 	"golang.org/x/crypto/ed25519"
-	"errors"
+	"log"
+	"net/http"
 )
 
 const server = "http://localhost:8000"
+
 var transactionsUrl string
 
 func init() {
@@ -36,7 +37,7 @@ func main() {
 	}
 	client := &http.Client{}
 	req, err := http.NewRequest(http.MethodPut, transactionsUrl,
-								bytes.NewReader(transactionJSON))
+		bytes.NewReader(transactionJSON))
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -1,26 +1,26 @@
-package server
+package web
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/InitialShape/blockchain/blockchain"
+	"github.com/InitialShape/blockchain/miner"
 	"github.com/mr-tron/base58/base58"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"log"
-	"github.com/InitialShape/blockchain/miner"
 )
 
 var (
-	server    *httptest.Server
-	blocksUrl string
+	server          *httptest.Server
+	blocksUrl       string
 	transactionsUrl string
-	rootUrl   string
-	store blockchain.Store
+	rootUrl         string
+	store           blockchain.Store
 )
 
 func init() {
@@ -53,7 +53,7 @@ func TestPutTransaction(t *testing.T) {
 	}
 	client := &http.Client{}
 	req, err := http.NewRequest(http.MethodPut, transactionsUrl,
-								bytes.NewReader(transactionJSON))
+		bytes.NewReader(transactionJSON))
 	if err != nil {
 		t.Error(err)
 	}
@@ -83,7 +83,7 @@ func TestGetTransactions(t *testing.T) {
 	}
 	client := &http.Client{}
 	req, err := http.NewRequest(http.MethodPut, transactionsUrl,
-								bytes.NewReader(transactionJSON))
+		bytes.NewReader(transactionJSON))
 	if err != nil {
 		t.Error(err)
 	}
@@ -132,7 +132,7 @@ func TestGetTransaction(t *testing.T) {
 	}
 	client := &http.Client{}
 	req, err := http.NewRequest(http.MethodPut, transactionsUrl,
-								bytes.NewReader(transactionJSON))
+		bytes.NewReader(transactionJSON))
 	if err != nil {
 		t.Error(err)
 	}

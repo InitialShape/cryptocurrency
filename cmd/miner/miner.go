@@ -1,11 +1,11 @@
 package main
 
 import (
-	"os"
-	"github.com/InitialShape/blockchain/miner"
 	"github.com/InitialShape/blockchain/blockchain"
-	"strconv"
+	"github.com/InitialShape/blockchain/miner"
 	"log"
+	"os"
+	"strconv"
 )
 
 func main() {

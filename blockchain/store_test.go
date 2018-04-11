@@ -1,16 +1,16 @@
 package blockchain_test
 
 import (
-	"testing"
-	"github.com/InitialShape/blockchain/miner"
-	"github.com/stretchr/testify/assert"
-	"github.com/InitialShape/blockchain/blockchain"
-	"github.com/mr-tron/base58/base58"
+	"bytes"
 	"crypto/rand"
+	"github.com/InitialShape/blockchain/blockchain"
+	"github.com/InitialShape/blockchain/miner"
+	"github.com/mr-tron/base58/base58"
+	"github.com/stretchr/testify/assert"
+	cbor "github.com/whyrusleeping/cbor/go"
 	"golang.org/x/crypto/ed25519"
 	"log"
-	"bytes"
-	cbor "github.com/whyrusleeping/cbor/go"
+	"testing"
 )
 
 const DB = "/tmp/db"

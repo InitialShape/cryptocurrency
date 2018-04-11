@@ -1,16 +1,16 @@
 package miner
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/InitialShape/blockchain/blockchain"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
-	"math/rand"
-	"bytes"
-	"errors"
 )
 
 func DownloadRoot(path string) (blockchain.Block, error) {
@@ -39,14 +39,13 @@ func GenerateBlock(path string, ch chan<- blockchain.Block) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	SearchBlock(root.Height + 1, root.Difficulty, root.Hash, ch)
+	SearchBlock(root.Height+1, root.Difficulty, root.Hash, ch)
 }
 
-
 func SearchBlock(height int, difficulty int, previousBlock []byte,
-				   ch chan<- blockchain.Block) {
+	ch chan<- blockchain.Block) {
 	newBlock := blockchain.Block{height, []byte{}, nil, previousBlock,
-	difficulty, 0}
+		difficulty, 0}
 
 	for {
 		// TODO: Use 256 bits
@@ -76,7 +75,7 @@ func SubmitBlock(block blockchain.Block) {
 	blocksUrl := fmt.Sprintf("%s/blocks", os.Args[1])
 	fmt.Println(blocksUrl)
 	req, err := http.NewRequest(http.MethodPut, blocksUrl,
-								bytes.NewReader(blockJSON))
+		bytes.NewReader(blockJSON))
 	fmt.Println("Sending new found block")
 	if err != nil {
 		log.Fatal(err)
@@ -88,6 +87,6 @@ func SubmitBlock(block blockchain.Block) {
 
 	if res.StatusCode != 201 {
 		errors.New(fmt.Sprintf("Expected status code 201 but got %d",
-							   res.StatusCode))
+			res.StatusCode))
 	}
 }

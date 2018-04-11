@@ -1,12 +1,12 @@
 package blockchain
 
 import (
-	"fmt"
-	cbor "github.com/whyrusleeping/cbor/go"
-	"errors"
 	"bytes"
-	"github.com/mr-tron/base58/base58"
+	"errors"
+	"fmt"
 	"github.com/boltdb/bolt"
+	"github.com/mr-tron/base58/base58"
+	cbor "github.com/whyrusleeping/cbor/go"
 	"time"
 )
 
