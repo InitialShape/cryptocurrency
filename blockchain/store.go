@@ -48,6 +48,16 @@ func (s *Store) Get(bucket []byte, key []byte) ([]byte, error) {
 	return data, err
 }
 
+func (s *Store) Delete(bucket []byte, key []byte) error {
+	err := s.DB.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucket)
+		err := b.Delete(key)
+		return err
+	})
+
+	return err
+}
+
 func (s *Store) StoreGenesisBlock(difficulty int) ([]byte, error) {
 	publicKey, _ := base58.Decode("6zjRZQyp47BjwArFoLpvzo8SHwwWeW571kJNiqWfSrFT")
 	privateKey, _ := base58.Decode("35DxrJipeuCAakHNnnPkBjwxQffYWKM1632kUFv9vKGRNREFSyM6awhyrucxTNbo9h693nPKeWonJ9sFkw6Tou4d")
@@ -86,6 +96,11 @@ func (s *Store) AddTransaction(transaction Transaction) error {
 	}
 
 	err = s.Put([]byte("transactions"), transaction.Hash, cbor.Bytes())
+	return err
+}
+
+func (s *Store) AddPeer(peer string) error {
+	err := s.Put([]byte("peers"), []byte(peer), []byte(peer))
 	return err
 }
 
@@ -129,6 +144,26 @@ func (s *Store) GetTransactions() ([]Transaction, error) {
 	}
 
 	return transactions, err
+}
+
+func (s *Store) GetPeers() ([]string, error) {
+	var peers []string
+	err := s.DB.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("peers"))
+
+		b.ForEach(func(k, v []byte) error {
+			peers = append(peers, string(v))
+
+			return nil
+		})
+		return nil
+	})
+	return peers, err
+}
+
+func (s *Store) DeletePeer(peer string) error {
+	err := s.Delete([]byte("peers"), []byte(peer))
+	return err
 }
 
 func (s *Store) AddBlock(block Block) error {
