@@ -26,11 +26,19 @@ type Transaction struct {
 	Outputs []Output `json:"outputs"`
 }
 
-func GenerateCoinbase(publicKey ed25519.PublicKey, amount int) Transaction {
+func GenerateCoinbase(publicKey ed25519.PublicKey,
+					  privateKey ed25519.PrivateKey, amount int) (Transaction,
+																  error) {
 	outputs := []Output{Output{publicKey, amount}}
 	inputs := []Input{Input{[]byte{}, "", 0}}
 	transaction := Transaction{[]byte{}, inputs, outputs}
-	return transaction
+	hash, err := transaction.GetHash()
+	if err != nil {
+		return transaction, err
+	}
+	transaction.Hash = hash
+	transaction.Sign(privateKey, 0)
+	return transaction, err
 }
 
 func (t *Transaction) GetCBOR() (*bytes.Buffer, error) {
@@ -69,6 +77,9 @@ func (t *Transaction) GetBase58Hash() (string, error) {
 
 func (t *Transaction) Sign(privateKey ed25519.PrivateKey, index int) error {
 	hash, err := t.GetHash()
+	if err != nil {
+		log.Fatal("Error signing transaction: ", err)
+	}
 	signature := ed25519.Sign(privateKey, hash)
 	t.Inputs[index].Signature = signature
 	return err

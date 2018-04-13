@@ -25,8 +25,7 @@ const COINBASE_AMOUNT = 25
 func GenerateGenesisBlock(publicKey ed25519.PublicKey,
 	privateKey ed25519.PrivateKey,
 	difficulty int) (Block, error) {
-	coinbase := GenerateCoinbase(publicKey, COINBASE_AMOUNT)
-	err := coinbase.Sign(privateKey, 0)
+	coinbase, err := GenerateCoinbase(publicKey, privateKey, COINBASE_AMOUNT)
 	if err != nil {
 		return Block{}, err
 	}

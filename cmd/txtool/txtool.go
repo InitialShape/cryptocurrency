@@ -21,7 +21,7 @@ func init() {
 }
 
 func main() {
-	publicKey, _, err := ed25519.GenerateKey(rand.Reader)
+	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
 	outputs := []blockchain.Output{blockchain.Output{publicKey, 10}}
 	inputs := []blockchain.Input{blockchain.Input{[]byte{}, "", 0}}
 	transaction := blockchain.Transaction{[]byte{}, inputs, outputs}
@@ -30,6 +30,7 @@ func main() {
 		log.Fatal(err)
 	}
 	transaction.Hash = hash
+	transaction.Sign(privateKey, 0)
 
 	transactionJSON, err := json.Marshal(transaction)
 	if err != nil {
