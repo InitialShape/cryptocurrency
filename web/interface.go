@@ -29,12 +29,16 @@ func Handlers(store blockchain.Store) *mux.Router {
 
 func GetTransactions(w http.ResponseWriter, r *http.Request) {
 	transactions, err := Store.GetTransactions()
-	if err != nil {
+	if err != nil && err.Error() == "Bucket access error" {
+		json.NewEncoder(w).Encode([]blockchain.Transaction{})
+	} else if err == nil {
+		json.NewEncoder(w).Encode(transactions)
+	} else {
 		log.Fatal(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("500 - couldn't get transactions"))
 	}
-	json.NewEncoder(w).Encode(transactions)
+
 }
 
 func GetTransaction(w http.ResponseWriter, r *http.Request) {

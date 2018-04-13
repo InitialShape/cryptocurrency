@@ -13,7 +13,29 @@ import (
 	"os"
 )
 
+func DownloadTransactions(path string) ([]blockchain.Transaction, error) {
+	var transactions []blockchain.Transaction
+	transactionsUrl := fmt.Sprintf("%s/transactions", path)
+	res, err := http.Get(transactionsUrl)
+	if err != nil {
+		return transactions, err
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return transactions, err
+	}
+
+	err = json.Unmarshal(body, &transactions)
+	if err != nil {
+		return transactions, err
+	}
+
+	return transactions, err
+}
+
 func DownloadRoot(path string) (blockchain.Block, error) {
+	var block blockchain.Block
 	rootUrl := fmt.Sprintf("%s/root", path)
 	res, err := http.Get(rootUrl)
 	if err != nil {
@@ -25,7 +47,6 @@ func DownloadRoot(path string) (blockchain.Block, error) {
 		return blockchain.Block{}, err
 	}
 
-	var block blockchain.Block
 	err = json.Unmarshal(body, &block)
 	if err != nil {
 		return blockchain.Block{}, err
@@ -39,12 +60,13 @@ func GenerateBlock(path string, ch chan<- blockchain.Block) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	SearchBlock(root.Height+1, root.Difficulty, root.Hash, ch)
+	transactions, err := DownloadTransactions(path)
+	SearchBlock(root.Height+1, root.Difficulty, root.Hash, transactions, ch)
 }
 
 func SearchBlock(height int, difficulty int, previousBlock []byte,
-	ch chan<- blockchain.Block) {
-	newBlock := blockchain.Block{height, []byte{}, nil, previousBlock,
+	transactions []blockchain.Transaction, ch chan<- blockchain.Block) {
+	newBlock := blockchain.Block{height, []byte{}, transactions, previousBlock,
 		difficulty, 0}
 
 	for {

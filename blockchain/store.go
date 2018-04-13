@@ -126,22 +126,23 @@ func (s *Store) GetTransactions() ([]Transaction, error) {
 	err := s.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("transactions"))
 
-		b.ForEach(func(k, v []byte) error {
-			var transaction Transaction
-			dec := cbor.NewDecoder(bytes.NewReader(v))
-			err := dec.Decode(&transaction)
-			if err != nil {
-				return err
-			}
-			transactions = append(transactions, transaction)
+		if b != nil {
+			b.ForEach(func(k, v []byte) error {
+				var transaction Transaction
+				dec := cbor.NewDecoder(bytes.NewReader(v))
+				err := dec.Decode(&transaction)
+				if err != nil {
+					return err
+				}
+				transactions = append(transactions, transaction)
 
-			return nil
-		})
+				return nil
+			})
+		} else {
+			return errors.New("Bucket access error")
+		}
 		return nil
 	})
-	if err != nil {
-		return []Transaction{}, err
-	}
 
 	return transactions, err
 }
@@ -179,6 +180,7 @@ func (s *Store) AddBlock(block Block) error {
 		return err
 	}
 
+	// Check if transactions are valid here and delete from mempool
 	if HashMatchesDifficulty(block.Hash, root.Difficulty) {
 		cbor, err := block.GetCBOR()
 		if err != nil {

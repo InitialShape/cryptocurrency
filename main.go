@@ -14,7 +14,7 @@ func main() {
 	store := blockchain.Store{}
 	store.Open(os.Args[1])
 
-	_, err := store.StoreGenesisBlock(10)
+	_, err := store.StoreGenesisBlock(20)
 	if err != nil {
 		log.Fatal(err)
 	}
