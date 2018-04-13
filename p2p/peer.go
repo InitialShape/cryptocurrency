@@ -2,6 +2,7 @@ package p2p
 
 import (
 	"fmt"
+	"errors"
 	"log"
 	"net"
 	"strings"
@@ -32,14 +33,15 @@ func (p *Peer) RegisterDefaultPeers() error {
 	scanner.Split(bufio.ScanLines)
 
 	for scanner.Scan() {
-		p.RegisterPeer(scanner.Text())
+		peer := scanner.Text()
+		p.RegisterPeer(peer)
 	}
 	return err
 }
 
-
 func (p *Peer) Start() {
 	p.RegisterDefaultPeers()
+	go p.Discovery()
 	address := fmt.Sprintf("%s:%s", p.Port, p.Host)
 	listener, err := net.Listen(CONN_TYPE, address)
 	if err != nil {
@@ -80,9 +82,24 @@ func (p *Peer) Handle(conn net.Conn) {
 	if strings.Contains(req, "REGISTER") {
 		resp = p.RegisterPeer(conn.RemoteAddr().String())
 	}
+	if strings.Contains(req, "PEERS") {
+		peers, err := p.GetPeers()
+		if err != nil {
+			fmt.Println("Error getting peers on request: ", err)
+		}
+		resp = peers
+	}
 
 	conn.Write(resp)
 	conn.Close()
+}
+
+func (p *Peer) GetPeers() ([]byte, error) {
+	peers, err := p.Store.GetPeers()
+	if err != nil {
+		return []byte{}, err
+	}
+	return []byte(strings.Join(peers, "\n")), err
 }
 
 func (p *Peer) Pong() []byte {
@@ -90,9 +107,38 @@ func (p *Peer) Pong() []byte {
 }
 
 func (p *Peer) RegisterPeer(peer string) []byte {
-	p.Store.AddPeer(peer)
-	fmt.Println("Registered new peer: ", peer)
-	return []byte("REGISTERED")
+	self := fmt.Sprintf("%s:%s", p.Port, p.Host)
+	if peer != self {
+		p.Store.AddPeer(peer)
+		fmt.Println("Registered new peer: ", peer)
+		return []byte("REGISTERED")
+	}
+	return []byte("NOT REGISTERED")
+}
+
+func (p *Peer) DiscoverPeers(peer string) error {
+	fmt.Println("Requesting new peers from: ", peer)
+	conn, err := net.Dial(CONN_TYPE, peer)
+	if err != nil {
+		fmt.Println("Error dialing peer: ", peer, err)
+		fmt.Println("Removing peer: ", peer)
+		p.Store.DeletePeer(peer)
+		return err
+	}
+	conn.Write([]byte("PEERS"))
+	resp, err := ioutil.ReadAll(conn)
+	if err != nil {
+		fmt.Println("Error reading PEERS response: ", err)
+		return err
+	}
+	respString := string(resp)
+	peers := strings.Split(respString, "\n")
+	fmt.Println("New peers received: ", peers)
+	for _, peer := range peers {
+		p.RegisterPeer(peer)
+	}
+
+	return err
 }
 
 func (p *Peer) Ping(peer string) error {
@@ -117,6 +163,21 @@ func (p *Peer) Ping(peer string) error {
 		fmt.Println("Received message from: ", conn.RemoteAddr().String(), string(resp))
 	}
 	return err
+}
+
+func (p *Peer) Discovery() error {
+	for range time.Tick(time.Second * 15) {
+		fmt.Println("Peer discovery initialized")
+		peers, err := p.Store.GetPeers()
+		if err != nil {
+			log.Fatal("Error getting peers: ", err)
+			return err
+		}
+		for _, peer := range peers {
+			p.DiscoverPeers(peer)
+		}
+	}
+	return errors.New("Cannot be reached")
 }
 
 func (p *Peer) CheckHeartBeat() {
