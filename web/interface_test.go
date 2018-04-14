@@ -32,7 +32,7 @@ func init() {
 	server = httptest.NewServer(Handlers(store))
 
 	blocksUrl = fmt.Sprintf("%s/blocks", server.URL)
-	transactionsUrl = fmt.Sprintf("%s/transactions", server.URL)
+	transactionsUrl = fmt.Sprintf("%s/mempool/transactions", server.URL)
 	rootUrl = fmt.Sprintf("%s/root", server.URL)
 }
 
@@ -177,7 +177,7 @@ func TestPutBlock(t *testing.T) {
 	}
 
 	ch := make(chan blockchain.Block)
-	go miner.SearchBlock(2, 5, genesis, []blockchain.Transaction{}, ch)
+	go miner.SearchBlock(2, 5, genesis, nil, ch)
 	newBlock := <-ch
 
 	newBlockJSON, err := json.Marshal(newBlock)

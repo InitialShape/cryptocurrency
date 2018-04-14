@@ -95,7 +95,7 @@ func (s *Store) AddTransaction(transaction Transaction) error {
 		return err
 	}
 
-	err = s.Put([]byte("transactions"), transaction.Hash, cbor.Bytes())
+	err = s.Put([]byte("mempool"), transaction.Hash, cbor.Bytes())
 	return err
 }
 
@@ -105,7 +105,7 @@ func (s *Store) AddPeer(peer string) error {
 }
 
 func (s *Store) GetTransaction(hash []byte) (Transaction, error) {
-	data, err := s.Get([]byte("transactions"), hash)
+	data, err := s.Get([]byte("mempool"), hash)
 	if err != nil {
 		return Transaction{}, err
 	}
@@ -124,7 +124,7 @@ func (s *Store) GetTransactions() ([]Transaction, error) {
 	var transactions []Transaction
 
 	err := s.DB.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("transactions"))
+		b := tx.Bucket([]byte("mempool"))
 
 		if b != nil {
 			b.ForEach(func(k, v []byte) error {

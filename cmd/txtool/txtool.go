@@ -17,7 +17,7 @@ const server = "http://localhost:8000"
 var transactionsUrl string
 
 func init() {
-	transactionsUrl = fmt.Sprintf("%s/transactions", server)
+	transactionsUrl = fmt.Sprintf("%s/mempool/transactions", server)
 }
 
 func main() {

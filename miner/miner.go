@@ -15,7 +15,7 @@ import (
 
 func DownloadTransactions(path string) ([]blockchain.Transaction, error) {
 	var transactions []blockchain.Transaction
-	transactionsUrl := fmt.Sprintf("%s/transactions", path)
+	transactionsUrl := fmt.Sprintf("%s/mempool/transactions", path)
 	res, err := http.Get(transactionsUrl)
 	if err != nil {
 		return transactions, err

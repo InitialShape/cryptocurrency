@@ -11,7 +11,7 @@ import (
 	"net/http"
 )
 
-const DB = "/tmp/lala"
+const DB = "/tmp/smthnew"
 
 var Store blockchain.Store
 
@@ -20,9 +20,9 @@ func Handlers(store blockchain.Store) *mux.Router {
 	r := mux.NewRouter()
 	r.HandleFunc("/blocks/{hash}", GetBlock).Methods("GET")
 	r.HandleFunc("/blocks", PutBlock).Methods("PUT")
-	r.HandleFunc("/transactions", PutTransaction).Methods("PUT")
-	r.HandleFunc("/transactions", GetTransactions).Methods("GET")
-	r.HandleFunc("/transactions/{hash}", GetTransaction).Methods("GET")
+	r.HandleFunc("/mempool/transactions", PutTransaction).Methods("PUT")
+	r.HandleFunc("/mempool/transactions", GetTransactions).Methods("GET")
+	r.HandleFunc("/mempool/transactions/{hash}", GetTransaction).Methods("GET")
 	r.HandleFunc("/root", GetRootBlock).Methods("GET")
 	return r
 }
