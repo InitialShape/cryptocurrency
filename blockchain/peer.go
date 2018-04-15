@@ -1,13 +1,13 @@
-package p2p
+package blockchain
 
 import (
 	"fmt"
 	"errors"
 	"log"
 	"net"
+	"encoding/json"
 	"strings"
 	"time"
-	"github.com/InitialShape/blockchain/blockchain"
 	"io/ioutil"
 	"os"
 	"bufio"
@@ -20,7 +20,7 @@ const (
 type Peer struct {
 	Port string
 	Host string
-	Store blockchain.Store
+	Store Store
 }
 
 func (p *Peer) RegisterDefaultPeers() error {
@@ -38,6 +38,7 @@ func (p *Peer) RegisterDefaultPeers() error {
 	}
 	return err
 }
+
 
 func (p *Peer) Start() {
 	p.RegisterDefaultPeers()
@@ -65,18 +66,18 @@ func (p *Peer) Start() {
 func (p *Peer) Handle(conn net.Conn) {
 	buf := make([]byte, 1024)
 
-	_, err := conn.Read(buf)
+	n, err := conn.Read(buf)
 	if err != nil {
 		fmt.Println("Error reading: ", err)
 	}
 
-	req := string(buf)
+	req := string(buf[:n])
 	resp := []byte{}
 
 	fmt.Printf("Received message from: %s %s\n", conn.RemoteAddr().String(), req)
 
 	// Buffer is 1024 big, even after casting to string
-	if strings.Contains(req, "PING") {
+	if req == "PING" {
 		resp = p.Pong()
 	}
 	if strings.Contains(req, "REGISTER") {
@@ -88,6 +89,17 @@ func (p *Peer) Handle(conn net.Conn) {
 			fmt.Println("Error getting peers on request: ", err)
 		}
 		resp = peers
+	}
+	if strings.Contains(req, "TRANSACTION") {
+		// in new function also check for index
+		transactionJSON := strings.Split(req, " ")[1]
+		var transaction Transaction
+		err := json.Unmarshal([]byte(transactionJSON), &transaction)
+		if err != nil {
+			fmt.Println("Couldn't read transaction JSON: ", err)
+		}
+		err = p.Store.AddTransaction(transaction)
+		fmt.Println("Added new transaction: %s", transactionJSON)
 	}
 
 	conn.Write(resp)
@@ -141,11 +153,31 @@ func (p *Peer) DiscoverPeers(peer string) error {
 	return err
 }
 
+func (p *Peer) SendTransaction(peer string, transaction Transaction) error {
+	conn, err := net.Dial(CONN_TYPE, peer)
+	if err != nil {
+		fmt.Println("Error dialing peer on sending transaction: ", err)
+		fmt.Println("Deleting peer: ", peer)
+		p.Store.DeletePeer(peer)
+		return err
+	}
+
+	header := []byte("TRANSACTION ")
+	transactionJSON, err := json.Marshal(transaction)
+	if err != nil {
+		log.Fatal("Error marshalling transaction: ", err)
+	}
+	message := append(header, transactionJSON...)
+
+	conn.Write(message)
+	return err
+}
+
 func (p *Peer) Ping(peer string) error {
 	conn, err := net.Dial(CONN_TYPE, peer)
 	if err != nil {
 		fmt.Println("Error dialing peer: ", peer, err)
-		fmt.Println("Removing peer: ", peer)
+		fmt.Println("Deleting peer: ", peer)
 		p.Store.DeletePeer(peer)
 		return err
 	}
@@ -178,6 +210,16 @@ func (p *Peer) Discovery() error {
 		}
 	}
 	return errors.New("Cannot be reached")
+}
+
+func (p *Peer) GossipTransaction(transaction Transaction) {
+	peers, err := p.Store.GetPeers()
+	if err != nil {
+		fmt.Println("Error getting peers: ", err)
+	}
+	for _, peer := range peers {
+		p.SendTransaction(peer, transaction)
+	}
 }
 
 func (p *Peer) CheckHeartBeat() {

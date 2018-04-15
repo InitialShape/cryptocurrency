@@ -12,14 +12,16 @@ import (
 
 type Store struct {
 	DB *bolt.DB
+	Peer *Peer
 }
 
-func (s *Store) Open(location string) error {
+func (s *Store) Open(location string, peer *Peer) error {
 	db, err := bolt.Open(location, 0600, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
 		return err
 	}
 	s.DB = db
+	s.Peer = peer
 	return err
 }
 
@@ -40,9 +42,13 @@ func (s *Store) Get(bucket []byte, key []byte) ([]byte, error) {
 	var data []byte
 	err := s.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(bucket)
-		v := b.Get(key)
-		data = append(data, v...)
-		return nil
+		if b != nil {
+			v := b.Get(key)
+			data = append(data, v...)
+			return nil
+		} else {
+			return errors.New("Bucket access error")
+		}
 	})
 
 	return data, err
@@ -93,6 +99,11 @@ func (s *Store) AddTransaction(transaction Transaction) error {
 	cbor, err := transaction.GetCBOR()
 	if err != nil {
 		return err
+	}
+
+	newTransaction, err := s.GetTransaction(transaction.Hash)
+	if newTransaction.Hash == nil{
+		go s.Peer.GossipTransaction(transaction)
 	}
 
 	err = s.Put([]byte("mempool"), transaction.Hash, cbor.Bytes())
