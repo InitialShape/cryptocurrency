@@ -11,8 +11,6 @@ import (
 	"net/http"
 )
 
-const DB = "/tmp/smthnew"
-
 var Store blockchain.Store
 
 func Handlers(store blockchain.Store) *mux.Router {

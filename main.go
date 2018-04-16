@@ -1,12 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"github.com/InitialShape/blockchain/blockchain"
 	"github.com/InitialShape/blockchain/web"
-	"fmt"
 	"log"
-	"os"
 	"net/http"
+	"os"
 )
 
 func main() {

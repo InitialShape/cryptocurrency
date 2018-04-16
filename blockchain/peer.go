@@ -1,16 +1,16 @@
 package blockchain
 
 import (
-	"fmt"
+	"bufio"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
-	"encoding/json"
+	"os"
 	"strings"
 	"time"
-	"io/ioutil"
-	"os"
-	"bufio"
 )
 
 const (
@@ -18,8 +18,8 @@ const (
 )
 
 type Peer struct {
-	Port string
-	Host string
+	Port  string
+	Host  string
 	Store Store
 }
 
@@ -39,14 +39,13 @@ func (p *Peer) RegisterDefaultPeers() error {
 	return err
 }
 
-
 func (p *Peer) Start() {
 	p.RegisterDefaultPeers()
 	go p.Discovery()
 	address := fmt.Sprintf("%s:%s", p.Port, p.Host)
 	listener, err := net.Listen(CONN_TYPE, address)
 	if err != nil {
-		log.Fatal("Error listening: ",err)
+		log.Fatal("Error listening: ", err)
 	}
 	defer listener.Close()
 	fmt.Printf("Peer is listening on %s:%s\n", p.Port, p.Host)
@@ -99,7 +98,7 @@ func (p *Peer) Handle(conn net.Conn) {
 			fmt.Println("Couldn't read transaction JSON: ", err)
 		}
 		err = p.Store.AddTransaction(transaction)
-		fmt.Println("Added new transaction: %s", transactionJSON)
+		fmt.Println("Added new transaction: ", transactionJSON)
 	}
 
 	conn.Write(resp)

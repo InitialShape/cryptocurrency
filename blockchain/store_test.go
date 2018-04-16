@@ -9,20 +9,20 @@ import (
 	"github.com/stretchr/testify/assert"
 	cbor "github.com/whyrusleeping/cbor/go"
 	"golang.org/x/crypto/ed25519"
-	"log"
 	"testing"
 )
 
-const DB = "/tmp/db"
+const DB = "/tmp/db123"
 
-var store blockchain.Store
+var (
+	store blockchain.Store
+	peer  blockchain.Peer
+)
 
 func init() {
 	store = blockchain.Store{}
-	err := store.Open(DB)
-	if err != nil {
-		log.Fatal(err)
-	}
+	store.Open(DB, &peer)
+	peer = blockchain.Peer{"localhost", "1234", store}
 }
 
 func TestPutBlock(t *testing.T) {
@@ -109,7 +109,7 @@ func TestAddTransaction(t *testing.T) {
 	transaction.Hash = hash
 	store.AddTransaction(transaction)
 
-	data, err := store.Get([]byte("transactions"), transaction.Hash)
+	data, err := store.Get([]byte("mempool"), transaction.Hash)
 	if err != nil {
 		t.Error(err)
 	}

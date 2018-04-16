@@ -9,11 +9,12 @@ import (
 	"github.com/mr-tron/base58/base58"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
+
+const DB = "/tmp/smthnew123"
 
 var (
 	server          *httptest.Server
@@ -21,14 +22,13 @@ var (
 	transactionsUrl string
 	rootUrl         string
 	store           blockchain.Store
+	peer            blockchain.Peer
 )
 
 func init() {
 	store = blockchain.Store{}
-	err := store.Open(DB)
-	if err != nil {
-		log.Fatal(err)
-	}
+	store.Open(DB, &peer)
+	peer = blockchain.Peer{"localhost", "1234", store}
 	server = httptest.NewServer(Handlers(store))
 
 	blocksUrl = fmt.Sprintf("%s/blocks", server.URL)

@@ -11,7 +11,7 @@ import (
 )
 
 type Store struct {
-	DB *bolt.DB
+	DB   *bolt.DB
 	Peer *Peer
 }
 
@@ -102,7 +102,8 @@ func (s *Store) AddTransaction(transaction Transaction) error {
 	}
 
 	newTransaction, err := s.GetTransaction(transaction.Hash)
-	if newTransaction.Hash == nil{
+	// TODO: Ideally we'd check for an empty struct here
+	if newTransaction.Hash == nil {
 		go s.Peer.GossipTransaction(transaction)
 	}
 
@@ -163,12 +164,16 @@ func (s *Store) GetPeers() ([]string, error) {
 	err := s.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("peers"))
 
-		b.ForEach(func(k, v []byte) error {
-			peers = append(peers, string(v))
+		if b != nil {
+			b.ForEach(func(k, v []byte) error {
+				peers = append(peers, string(v))
 
+				return nil
+			})
 			return nil
-		})
-		return nil
+		} else {
+			return errors.New("Bucket access error")
+		}
 	})
 	return peers, err
 }

@@ -27,8 +27,8 @@ type Transaction struct {
 }
 
 func GenerateCoinbase(publicKey ed25519.PublicKey,
-					  privateKey ed25519.PrivateKey, amount int) (Transaction,
-																  error) {
+	privateKey ed25519.PrivateKey, amount int) (Transaction,
+	error) {
 	outputs := []Output{Output{publicKey, amount}}
 	inputs := []Input{Input{[]byte{}, "", 0}}
 	transaction := Transaction{[]byte{}, inputs, outputs}
