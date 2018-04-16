@@ -1,0 +1,94 @@
+{
+    "$id": "http://example.com/example.json",
+    "type": "object",
+    "properties": {
+        "hash": {
+            "$id": "/properties/hash",
+            "type": "string",
+            "title": "The Hash Schema ",
+            "default": "",
+            "examples": [
+                "wB00oquC0B50sCq0HsRMcKrJ0Su2fn/2YyrY1sF96Oc="
+                                                                      ]
+        },
+        "inputs": {
+            "$id": "/properties/inputs",
+            "type": "array",
+            "items": {
+                "$id": "/properties/inputs/items",
+                "type": "object",
+                "properties": {
+                    "signature": {
+                        "$id": "/properties/inputs/items/properties/signature",
+                        "type": "string",
+                        "title": "The Signature Schema ",
+                        "default": "",
+                        "examples": [
+                            "WlW6M5pm+xYRKFH1K6Qgq1Hrx4mHUkXtvSc5y38yURTTjznOiCMv5j0LJjiTXWvfi1aWveJUCYpkebIYA03rAw=="
+                        ]
+                    },
+                    "transaction_hash": {
+                        "$id": "/properties/inputs/items/properties/transaction_hash",
+                        "type": "string",
+                        "title": "The Transaction_hash Schema ",
+                        "default": "",
+                        "examples": [
+                            ""
+                        ]
+                    },
+                    "output_id": {
+                        "$id": "/properties/inputs/items/properties/output_id",
+                        "type": "integer",
+                        "title": "The Output_id Schema ",
+                        "default": 0,
+                        "examples": [
+                            0
+                        ]
+                    }
+                },
+                "required": [
+                    "signature",
+                    "transaction_hash",
+                    "output_id"
+                ]
+            }
+        },
+        "outputs": {
+            "$id": "/properties/outputs",
+            "type": "array",
+            "items": {
+                "$id": "/properties/outputs/items",
+                "type": "object",
+                "properties": {
+                    "public_key": {
+                        "$id": "/properties/outputs/items/properties/public_key",
+                        "type": "string",
+                        "title": "The Public_key Schema ",
+                        "default": "",
+                        "examples": [
+                            "jHl9boqLuAscAMfcBEC7xeOqjqt8PxnWDVeDpzkP7Nc="
+                        ]
+                    },
+                    "amount": {
+                        "$id": "/properties/outputs/items/properties/amount",
+                        "type": "integer",
+                        "title": "The Amount Schema ",
+                        "default": 0,
+                        "examples": [
+                            10
+                        ]
+                    }
+                },
+                "required": [
+                    "public_key",
+                    "amount"
+                ]
+            }
+        }
+    },
+    "required": [
+        "hash",
+        "inputs",
+        "outputs"
+    ]
+}
