@@ -2,6 +2,7 @@ package blockchain_test
 
 import (
 	"bytes"
+	"errors"
 	"crypto/rand"
 	"github.com/InitialShape/blockchain/blockchain"
 	"github.com/InitialShape/blockchain/miner"
@@ -12,7 +13,7 @@ import (
 	"testing"
 )
 
-const DB = "/tmp/db123"
+const DB = "/tmp/db321"
 
 var (
 	store blockchain.Store
@@ -32,7 +33,7 @@ func TestPutBlock(t *testing.T) {
 	}
 
 	ch := make(chan blockchain.Block)
-	go miner.SearchBlock(2, 5, genesis, []blockchain.Transaction{}, ch)
+	go miner.SearchBlock(2, 5, genesis.Hash, []blockchain.Transaction{}, ch)
 	newBlock := <-ch
 
 	err = store.AddBlock(newBlock)
@@ -41,15 +42,101 @@ func TestPutBlock(t *testing.T) {
 	}
 }
 
+func TestGetTransactionWithNothingInBucket (t *testing.T) {
+	transaction, err := store.GetTransaction([]byte("transactions"), false)
+	if assert.Error(t, err) {
+		assert.Equal(t, err, errors.New("EOF"))
+	}
+
+	privateKey, _ := base58.Decode("35DxrJipeuCAakHNnnPkBjwxQffYWKM1632kUFv9vKGRNREFSyM6awhyrucxTNbo9h693nPKeWonJ9sFkw6Tou4d")
+	publicKey, _ := base58.Decode("6zjRZQyp47BjwArFoLpvzo8SHwwWeW571kJNiqWfSrFT")
+	outputs := []blockchain.Output{blockchain.Output{publicKey, 100}}
+	inputs := []blockchain.Input{blockchain.Input{[]byte{}, []byte{} , 0}}
+	transaction = blockchain.Transaction{[]byte{}, inputs, outputs}
+	hash, err := transaction.GetHash()
+	if err != nil {
+		t.Error(err)
+	}
+	transaction.Hash = hash
+	transaction.Sign(privateKey, 0)
+	cbor, err := transaction.GetCBOR()
+	if err != nil {
+		t.Error(err)
+	}
+	err = store.Put([]byte("transactions"), transaction.Hash, cbor.Bytes())
+
+	transaction, err = store.GetTransaction(transaction.Hash, false)
+
+}
+
+func TestPutBlockWithTransferTransaction(t *testing.T) {
+	genesis, err := store.StoreGenesisBlock(5)
+	if err != nil {
+		t.Error(err)
+	}
+
+	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	outputs := []blockchain.Output{blockchain.Output{publicKey, 123}}
+	inputs := []blockchain.Input{blockchain.Input{[]byte{},
+		genesis.Transactions[0].Hash, 0}}
+	transaction := blockchain.Transaction{[]byte{}, inputs, outputs}
+	hash, err := transaction.GetHash()
+	if err != nil {
+		t.Error(err)
+	}
+	transaction.Hash = hash
+	transaction.Sign(privateKey, 0)
+
+	coinbase, err := blockchain.GenerateCoinbase(publicKey, privateKey, 100)
+	if err != nil {
+		t.Error(err)
+	}
+
+	ch := make(chan blockchain.Block)
+	go miner.SearchBlock(2, 5, genesis.Hash, []blockchain.Transaction{coinbase, transaction}, ch)
+	newBlock := <-ch
+
+	err = store.AddBlock(newBlock)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestPutCoinbaseTwiceInBlock(t *testing.T) {
+	genesis, err := store.StoreGenesisBlock(5)
+	if err != nil {
+		t.Error(err)
+	}
+
+	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Error(err)
+	}
+	transaction, err := blockchain.GenerateCoinbase(publicKey, privateKey, 100)
+	if err != nil {
+		t.Error(err)
+	}
+
+	ch := make(chan blockchain.Block)
+	go miner.SearchBlock(2, 5, genesis.Hash,
+		[]blockchain.Transaction{transaction, transaction}, ch)
+	newBlock := <-ch
+
+	err = store.AddBlock(newBlock)
+	if assert.Error(t, err) {
+		assert.Equal(t, errors.New("Transaction duplicate in block"), err)
+	}
+}
+
 func TestPutBlockWithTooLowDifficulty(t *testing.T) {
-	t.Skip()
+	// TODO: This function fails every once in a while
 	genesis, err := store.StoreGenesisBlock(6)
 	if err != nil {
 		t.Error(err)
 	}
 
 	ch := make(chan blockchain.Block)
-	go miner.SearchBlock(2, 5, genesis, []blockchain.Transaction{}, ch)
+	go miner.SearchBlock(2, 5, genesis.Hash, []blockchain.Transaction{}, ch)
 	newBlock := <-ch
 
 	err = store.AddBlock(newBlock)

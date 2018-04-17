@@ -14,7 +14,7 @@ import (
 	"testing"
 )
 
-const DB = "/tmp/smthnew123"
+const DB = "/tmp/smthnew321"
 
 var (
 	server          *httptest.Server
@@ -177,7 +177,7 @@ func TestPutBlock(t *testing.T) {
 	}
 
 	ch := make(chan blockchain.Block)
-	go miner.SearchBlock(2, 5, genesis, nil, ch)
+	go miner.SearchBlock(2, 5, genesis.Hash, nil, ch)
 	newBlock := <-ch
 
 	newBlockJSON, err := json.Marshal(newBlock)

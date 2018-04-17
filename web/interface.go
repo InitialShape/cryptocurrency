@@ -49,7 +49,7 @@ func GetTransaction(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("500 - Couldn't decode base58"))
 	}
 
-	transaction, err := Store.GetTransaction(hash)
+	transaction, err := Store.GetTransaction(hash, true)
 	if err != nil {
 		log.Fatal(err)
 		w.WriteHeader(http.StatusInternalServerError)

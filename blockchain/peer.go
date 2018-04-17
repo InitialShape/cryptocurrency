@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 )
+// TODO: Use log for logging
 
 const (
 	CONN_TYPE = "tcp"

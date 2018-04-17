@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"log"
 	"github.com/boltdb/bolt"
 	"github.com/mr-tron/base58/base58"
 	cbor "github.com/whyrusleeping/cbor/go"
@@ -45,6 +46,9 @@ func (s *Store) Get(bucket []byte, key []byte) ([]byte, error) {
 		if b != nil {
 			v := b.Get(key)
 			data = append(data, v...)
+			if v == nil {
+				return errors.New("EOF")
+			}
 			return nil
 		} else {
 			return errors.New("Bucket access error")
@@ -64,35 +68,22 @@ func (s *Store) Delete(bucket []byte, key []byte) error {
 	return err
 }
 
-func (s *Store) StoreGenesisBlock(difficulty int) ([]byte, error) {
+func (s *Store) StoreGenesisBlock(difficulty int) (Block, error) {
 	publicKey, _ := base58.Decode("6zjRZQyp47BjwArFoLpvzo8SHwwWeW571kJNiqWfSrFT")
 	privateKey, _ := base58.Decode("35DxrJipeuCAakHNnnPkBjwxQffYWKM1632kUFv9vKGRNREFSyM6awhyrucxTNbo9h693nPKeWonJ9sFkw6Tou4d")
 
 	block, err := GenerateGenesisBlock(publicKey, privateKey, difficulty)
 	if err != nil {
-		return []byte{}, err
+		return Block{}, err
 	}
 
-	cbor, err := block.GetCBOR()
-	if err != nil {
-		return []byte{}, err
-	}
-
-	err = s.Put([]byte("blocks"), block.Hash, cbor.Bytes())
-	if err != nil {
-		return []byte{}, err
-	}
-	err = s.Put([]byte("blocks"), []byte("root"), block.Hash)
-	if err != nil {
-		return []byte{}, err
-	}
-
+	s.storeBlock(block)
 	base58Hash, err := block.GetBase58Hash()
 	if err != nil {
-		return []byte{}, err
+		return Block{}, err
 	}
 	fmt.Println(base58Hash)
-	return block.Hash, err
+	return block, err
 }
 
 func (s *Store) AddTransaction(transaction Transaction) error {
@@ -101,7 +92,7 @@ func (s *Store) AddTransaction(transaction Transaction) error {
 		return err
 	}
 
-	newTransaction, err := s.GetTransaction(transaction.Hash)
+	newTransaction, err := s.GetTransaction(transaction.Hash, true)
 	// TODO: Ideally we'd check for an empty struct here
 	if newTransaction.Hash == nil {
 		go s.Peer.GossipTransaction(transaction)
@@ -116,8 +107,14 @@ func (s *Store) AddPeer(peer string) error {
 	return err
 }
 
-func (s *Store) GetTransaction(hash []byte) (Transaction, error) {
-	data, err := s.Get([]byte("mempool"), hash)
+func (s *Store) GetTransaction(hash []byte, mempool bool) (Transaction, error) {
+	var data []byte
+	var err error
+	if mempool {
+		data, err = s.Get([]byte("mempool"), hash)
+	} else {
+		data, err = s.Get([]byte("transactions"), hash)
+	}
 	if err != nil {
 		return Transaction{}, err
 	}
@@ -183,9 +180,74 @@ func (s *Store) DeletePeer(peer string) error {
 	return err
 }
 
+func (s *Store) VerifyTransaction(transaction Transaction, index int) (bool, error) {
+	// TODO: Cannot verify if dependent transaction is in block
+	if index == 0 && len(transaction.Inputs[0].TransactionHash) == 0 &&
+		transaction.Inputs[0].OutputID == 0 {
+		return true, nil
+	}
+
+	_, err := s.GetTransaction(transaction.Hash, false)
+	if err != nil && (err.Error() == "Bucket access error" || err.Error() == "EOF") {
+		// Check if transactions are valid here
+		inputTransaction, err := s.GetTransaction(
+			transaction.Inputs[0].TransactionHash, false)
+			if err != nil && (err.Error() == "Bucket access error" ||
+				err.Error() == "EOF") {
+					return false, errors.New("Input transaction doesn't exist")
+			} else {
+				inputPublicKey := inputTransaction.Outputs[0].PublicKey
+				return transaction.Verify(inputPublicKey, 0)
+			}
+	} else if err == nil {
+		fmt.Println("Transaction with hash exists already", transaction.Hash, index)
+		return false, errors.New("Transaction exists already")
+	} else {
+		// should not be reached
+		log.Fatal(err)
+		return false, err
+	}
+}
+
+func (s *Store) storeBlock(block Block) error {
+	cbor, err := block.GetCBOR()
+	if err != nil {
+		return err
+	}
+
+	err = s.Put([]byte("blocks"), block.Hash, cbor.Bytes())
+	if err != nil {
+		log.Fatal("Error storing block", err)
+		return err
+	}
+	err = s.Put([]byte("blocks"), []byte("root"), block.Hash)
+	if err != nil {
+		log.Fatal("Error overwriting root", err)
+		return err
+	}
+	log.Println("Block added successfully")
+
+	// store transactions in transactions bucket
+	for _, transaction := range block.Transactions {
+		transactionCbor, err := transaction.GetCBOR()
+		if err != nil {
+			log.Fatal("Couldn't transform transaction to cbor: ", err)
+			return err
+		}
+		err = s.Put([]byte("transactions"), transaction.Hash,
+			transactionCbor.Bytes())
+		if err != nil {
+			log.Fatal("Error storing transaction", err)
+			return err
+		}
+	}
+	return err
+}
+
 func (s *Store) AddBlock(block Block) error {
 	data, err := s.Get([]byte("blocks"), block.PreviousBlock)
 	if err != nil {
+		log.Fatal("Error getting previous block", err)
 		return err
 	}
 
@@ -196,26 +258,37 @@ func (s *Store) AddBlock(block Block) error {
 		return err
 	}
 
-	// Check if transactions are valid here and delete from mempool
 	if HashMatchesDifficulty(block.Hash, root.Difficulty) {
-		cbor, err := block.GetCBOR()
+
+		// check for duplicates in block
+		visited := make(map[string]bool)
+		for _, transaction := range block.Transactions {
+			if visited[string(transaction.Hash)] {
+				return errors.New("Transaction duplicate in block")
+			} else {
+				visited[string(transaction.Hash)] = true
+			}
+		}
+
+		// verify transactions' integrity
+		for index, transaction := range block.Transactions {
+			_, err := s.VerifyTransaction(transaction, index)
+			if err != nil {
+				return err
+			}
+		}
+
+		err = s.storeBlock(block)
 		if err != nil {
+			log.Fatal("Error storing block", err)
 			return err
 		}
 
-		err = s.Put([]byte("blocks"), block.Hash, cbor.Bytes())
-		if err != nil {
-			return err
-		}
-		err = s.Put([]byte("blocks"), []byte("root"), block.Hash)
-		if err != nil {
-			return err
+		// delete all transactions from mempool
+		for _, transaction := range block.Transactions {
+			s.Delete([]byte("mempool"), transaction.Hash)
 		}
 
-		fmt.Println("Put new block as root with hash and difficulty ", root.Difficulty)
-		for _, n := range block.Hash {
-			fmt.Printf("%08b", n)
-		}
 		return err
 	} else {
 		return errors.New("Difficulty too low")

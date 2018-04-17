@@ -84,3 +84,12 @@ func (t *Transaction) Sign(privateKey ed25519.PrivateKey, index int) error {
 	t.Inputs[index].Signature = signature
 	return err
 }
+
+func (t *Transaction) Verify(publicKey ed25519.PublicKey, index int) (bool, error) {
+	hash, err := t.GetHash()
+	if err != nil {
+		log.Fatal("Error validating transaction: ", err)
+		return false, err
+	}
+	return ed25519.Verify(publicKey, hash, t.Inputs[index].Signature), err
+}

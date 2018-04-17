@@ -53,6 +53,9 @@ func TestTransactionSign(t *testing.T) {
 	inputs := []Input{Input{[]byte{}, []byte{}, 0}}
 	transaction := Transaction{[]byte{}, inputs, outputs}
 	hash, err := transaction.GetHash()
+	if err != nil {
+		t.Error(err)
+	}
 	signature := ed25519.Sign(privateKey, hash)
 	transaction.Sign(privateKey, 0)
 
