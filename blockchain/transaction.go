@@ -11,7 +11,7 @@ import (
 
 type Input struct {
 	Signature       []byte `json:"signature"`
-	TransactionHash string `json:"transaction_hash"`
+	TransactionHash []byte `json:"transaction_hash"`
 	OutputID        int    `json:"output_id"`
 }
 
@@ -30,7 +30,7 @@ func GenerateCoinbase(publicKey ed25519.PublicKey,
 	privateKey ed25519.PrivateKey, amount int) (Transaction,
 	error) {
 	outputs := []Output{Output{publicKey, amount}}
-	inputs := []Input{Input{[]byte{}, "", 0}}
+	inputs := []Input{Input{[]byte{}, []byte{}, 0}}
 	transaction := Transaction{[]byte{}, inputs, outputs}
 	hash, err := transaction.GetHash()
 	if err != nil {

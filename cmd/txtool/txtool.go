@@ -23,7 +23,7 @@ func init() {
 func main() {
 	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
 	outputs := []blockchain.Output{blockchain.Output{publicKey, 10}}
-	inputs := []blockchain.Input{blockchain.Input{[]byte{}, "", 0}}
+	inputs := []blockchain.Input{blockchain.Input{[]byte{}, []byte{}, 0}}
 	transaction := blockchain.Transaction{[]byte{}, inputs, outputs}
 	hash, err := transaction.GetHash()
 	if err != nil {

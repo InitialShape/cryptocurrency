@@ -22,7 +22,7 @@ func TestCoinbaseTransaction(t *testing.T) {
 	}
 
 	outputs := []Output{Output{publicKey, 100}}
-	inputs := []Input{Input{[]byte{}, "", 0}}
+	inputs := []Input{Input{[]byte{}, []byte{}, 0}}
 	expected := Transaction{[]byte{}, inputs, outputs}
 
 	assert.Equal(t, transaction, expected)
@@ -34,14 +34,14 @@ func TestTransactionGetBase58Hash(t *testing.T) {
 		t.Error(err)
 	}
 	outputs := []Output{Output{publicKey, 100}}
-	inputs := []Input{Input{[]byte{}, "", 0}}
+	inputs := []Input{Input{[]byte{}, []byte{}, 0}}
 	transaction := Transaction{[]byte{}, inputs, outputs}
 	hash, err := transaction.GetBase58Hash()
 	if err != nil {
 		t.Error(err)
 	}
 
-	assert.Equal(t, "3cqbiEKWBZpTYc3D6GTrguBRevhhcowbgdxZAdVApd5U", hash)
+	assert.Equal(t, "4LFP1GFFMRaB3ay6ooisKzzEUbDqnFNpWFCrqKrxhhi1", hash)
 }
 
 func TestTransactionSign(t *testing.T) {
@@ -50,7 +50,7 @@ func TestTransactionSign(t *testing.T) {
 		t.Error(err)
 	}
 	outputs := []Output{Output{publicKey, 100}}
-	inputs := []Input{Input{[]byte{}, "", 0}}
+	inputs := []Input{Input{[]byte{}, []byte{}, 0}}
 	transaction := Transaction{[]byte{}, inputs, outputs}
 	hash, err := transaction.GetHash()
 	signature := ed25519.Sign(privateKey, hash)

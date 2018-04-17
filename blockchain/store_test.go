@@ -81,7 +81,7 @@ func TestGetTransactions(t *testing.T) {
 	}
 
 	outputs := []blockchain.Output{blockchain.Output{publicKey, 10}}
-	inputs := []blockchain.Input{blockchain.Input{[]byte{}, "", 0}}
+	inputs := []blockchain.Input{blockchain.Input{[]byte{}, []byte{}, 0}}
 	transaction := blockchain.Transaction{[]byte{}, inputs, outputs}
 	hash, err := transaction.GetHash()
 	if err != nil {
@@ -100,7 +100,7 @@ func TestGetTransactions(t *testing.T) {
 func TestAddTransaction(t *testing.T) {
 	publicKey, _ := base58.Decode("6zjRZQyp47BjwArFoLpvzo8SHwwWeW571kJNiqWfSrFT")
 	outputs := []blockchain.Output{blockchain.Output{publicKey, 10}}
-	inputs := []blockchain.Input{blockchain.Input{[]byte{}, "", 0}}
+	inputs := []blockchain.Input{blockchain.Input{[]byte{}, []byte{}, 0}}
 	transaction := blockchain.Transaction{[]byte{}, inputs, outputs}
 	hash, err := transaction.GetHash()
 	if err != nil {
