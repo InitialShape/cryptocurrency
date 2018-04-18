@@ -93,12 +93,65 @@ func TestPutBlockWithTransferTransaction(t *testing.T) {
 	}
 
 	ch := make(chan blockchain.Block)
-	go miner.SearchBlock(2, 5, genesis.Hash, []blockchain.Transaction{coinbase, transaction}, ch)
+	go miner.SearchBlock(2, 5, genesis.Hash,
+		[]blockchain.Transaction{coinbase, transaction}, ch)
 	newBlock := <-ch
 
 	err = store.AddBlock(newBlock)
 	if err != nil {
 		t.Error(err)
+	}
+}
+
+func TestSpendTransactionTwice(t *testing.T) {
+	genesis, err := store.StoreGenesisBlock(5)
+	if err != nil {
+		t.Error(err)
+	}
+
+	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	outputs := []blockchain.Output{blockchain.Output{publicKey, 123}}
+	inputs := []blockchain.Input{blockchain.Input{[]byte{},
+		genesis.Transactions[0].Hash, 0}}
+	transaction := blockchain.Transaction{[]byte{}, inputs, outputs}
+	hash, err := transaction.GetHash()
+	if err != nil {
+		t.Error(err)
+	}
+	transaction.Hash = hash
+	transaction.Sign(privateKey, 0)
+
+	coinbase, err := blockchain.GenerateCoinbase(publicKey, privateKey, 100)
+	if err != nil {
+		t.Error(err)
+	}
+
+	ch := make(chan blockchain.Block)
+	go miner.SearchBlock(2, 5, genesis.Hash,
+		[]blockchain.Transaction{coinbase, transaction}, ch)
+	newBlock := <-ch
+	err = store.AddBlock(newBlock)
+
+	publicKey, privateKey, err = ed25519.GenerateKey(rand.Reader)
+	outputs = []blockchain.Output{blockchain.Output{publicKey, 123}}
+	inputs = []blockchain.Input{blockchain.Input{[]byte{},
+		genesis.Transactions[0].Hash, 0}}
+	transaction = blockchain.Transaction{[]byte{}, inputs, outputs}
+	hash, err = transaction.GetHash()
+	if err != nil {
+		t.Error(err)
+	}
+	transaction.Hash = hash
+	transaction.Sign(privateKey, 0)
+
+	ch = make(chan blockchain.Block)
+	go miner.SearchBlock(2, 5, genesis.Hash,
+		[]blockchain.Transaction{coinbase, transaction}, ch)
+	newBlock = <-ch
+
+	err = store.AddBlock(newBlock)
+	if assert.Error(t, err) {
+		assert.Equal(t, errors.New("Output doesn't exist (anymore?)"), err)
 	}
 }
 

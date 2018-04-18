@@ -15,7 +15,7 @@ A few things are working already. There is:
 transactions around
 - An HTTP API that allows for sending transactions, minted blocks and
 that allows miners to be implemented
-- A working transaction evaluation pipeline that checks the validity of
+- An almost working transaction evaluation pipeline that checks the validity of
 transactions within blocks
 - A miner
 - A tool for creating and sending transactions

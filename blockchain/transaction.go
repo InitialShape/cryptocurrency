@@ -41,13 +41,26 @@ func GenerateCoinbase(publicKey ed25519.PublicKey,
 	return transaction, err
 }
 
+func (o *Output) GetCBOR() ([]byte, error) {
+	buf := new(bytes.Buffer)
+	enc := cbor.NewEncoder(buf)
+	err := enc.Encode(o)
+
+	if err != nil {
+		log.Fatal("Error encoding", err)
+		return []byte{}, err
+	}
+
+	return buf.Bytes(), err
+}
+
 func (t *Transaction) GetCBOR() (*bytes.Buffer, error) {
 	buf := new(bytes.Buffer)
 	enc := cbor.NewEncoder(buf)
 	err := enc.Encode(t)
 
 	if err != nil {
-		log.Fatal("Error decoding ", err)
+		log.Fatal("Error encoding", err)
 		return new(bytes.Buffer), err
 	}
 

@@ -43,6 +43,7 @@ func GenerateGenesisBlock(publicKey ed25519.PublicKey,
 }
 
 func (b *Block) GetCBOR() (*bytes.Buffer, error) {
+	// change this to type []byte
 	buf := new(bytes.Buffer)
 	enc := cbor.NewEncoder(buf)
 	err := enc.Encode(b)

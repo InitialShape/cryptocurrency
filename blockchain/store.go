@@ -196,8 +196,18 @@ func (s *Store) VerifyTransaction(transaction Transaction, index int) (bool, err
 				err.Error() == "EOF") {
 					return false, errors.New("Input transaction doesn't exist")
 			} else {
-				inputPublicKey := inputTransaction.Outputs[0].PublicKey
-				return transaction.Verify(inputPublicKey, 0)
+				pointer := fmt.Sprintf("-%d", 0)
+				pointerBytes := append(transaction.Inputs[0].TransactionHash,
+									   pointer...)
+				_, err := s.Get([]byte("utxo"), pointerBytes)
+				if err != nil && (err.Error() == "Bucket access error" ||
+					err.Error() == "EOF") {
+					// output unspendable as doesn't exist
+					return false, errors.New("Output doesn't exist (anymore?)")
+				} else {
+					inputPublicKey := inputTransaction.Outputs[0].PublicKey
+					return transaction.Verify(inputPublicKey, 0)
+				}
 			}
 	} else if err == nil {
 		fmt.Println("Transaction with hash exists already", transaction.Hash, index)
@@ -239,6 +249,17 @@ func (s *Store) storeBlock(block Block) error {
 		if err != nil {
 			log.Fatal("Error storing transaction", err)
 			return err
+		}
+
+		for index, output := range transaction.Outputs {
+			outputCbor, err := output.GetCBOR()
+			if err != nil {
+				log.Fatal("Error encoding output to cbor", err)
+			}
+
+			pointer := fmt.Sprintf("-%d", index)
+			pointerBytes := append(transaction.Hash, pointer...)
+			err = s.Put([]byte("utxo"), pointerBytes, outputCbor)
 		}
 	}
 	return err
@@ -287,6 +308,12 @@ func (s *Store) AddBlock(block Block) error {
 		// delete all transactions from mempool
 		for _, transaction := range block.Transactions {
 			s.Delete([]byte("mempool"), transaction.Hash)
+
+			for index, input := range transaction.Inputs {
+				pointer := fmt.Sprintf("-%d", index)
+				pointerBytes := append(input.TransactionHash, pointer...)
+				s.Delete([]byte("utxo"), pointerBytes)
+			}
 		}
 
 		return err
