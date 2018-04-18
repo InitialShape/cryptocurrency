@@ -54,17 +54,17 @@ func (o *Output) GetCBOR() ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-func (t *Transaction) GetCBOR() (*bytes.Buffer, error) {
+func (t *Transaction) GetCBOR() ([]byte, error) {
 	buf := new(bytes.Buffer)
 	enc := cbor.NewEncoder(buf)
 	err := enc.Encode(t)
 
 	if err != nil {
 		log.Fatal("Error encoding", err)
-		return new(bytes.Buffer), err
+		return []byte{}, err
 	}
 
-	return buf, err
+	return buf.Bytes(), err
 }
 
 func (t *Transaction) GetHash() ([]byte, error) {
@@ -75,7 +75,7 @@ func (t *Transaction) GetHash() ([]byte, error) {
 		return []byte{}, err
 	}
 	hasher := sha256.New()
-	hasher.Write(transaction.Bytes())
+	hasher.Write(transaction)
 	t.Hash = hash
 	return hasher.Sum(nil), err
 }

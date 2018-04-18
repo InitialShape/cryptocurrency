@@ -63,7 +63,7 @@ func TestGetTransactionWithNothingInBucket (t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	err = store.Put([]byte("transactions"), transaction.Hash, cbor.Bytes())
+	err = store.Put([]byte("transactions"), transaction.Hash, cbor)
 
 	transaction, err = store.GetTransaction(transaction.Hash, false)
 

@@ -24,7 +24,7 @@ func TestMarshal(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	assert.Equal(t, marshalledBlock, buf)
+	assert.Equal(t, marshalledBlock, buf.Bytes())
 }
 
 func TestBlockGetBase58Hash(t *testing.T) {

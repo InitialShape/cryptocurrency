@@ -98,7 +98,7 @@ func (s *Store) AddTransaction(transaction Transaction) error {
 		go s.Peer.GossipTransaction(transaction)
 	}
 
-	err = s.Put([]byte("mempool"), transaction.Hash, cbor.Bytes())
+	err = s.Put([]byte("mempool"), transaction.Hash, cbor)
 	return err
 }
 
@@ -225,7 +225,7 @@ func (s *Store) storeBlock(block Block) error {
 		return err
 	}
 
-	err = s.Put([]byte("blocks"), block.Hash, cbor.Bytes())
+	err = s.Put([]byte("blocks"), block.Hash, cbor)
 	if err != nil {
 		log.Fatal("Error storing block", err)
 		return err
@@ -245,7 +245,7 @@ func (s *Store) storeBlock(block Block) error {
 			return err
 		}
 		err = s.Put([]byte("transactions"), transaction.Hash,
-			transactionCbor.Bytes())
+			transactionCbor)
 		if err != nil {
 			log.Fatal("Error storing transaction", err)
 			return err

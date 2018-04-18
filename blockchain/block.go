@@ -42,18 +42,17 @@ func GenerateGenesisBlock(publicKey ed25519.PublicKey,
 	return block, err
 }
 
-func (b *Block) GetCBOR() (*bytes.Buffer, error) {
-	// change this to type []byte
+func (b *Block) GetCBOR() ([]byte, error) {
 	buf := new(bytes.Buffer)
 	enc := cbor.NewEncoder(buf)
 	err := enc.Encode(b)
 
 	if err != nil {
 		log.Fatal("Error decoding ", err)
-		return new(bytes.Buffer), err
+		return []byte{}, err
 	}
 
-	return buf, err
+	return buf.Bytes(), err
 }
 
 func (b *Block) GetHash() ([]byte, error) {
@@ -65,7 +64,7 @@ func (b *Block) GetHash() ([]byte, error) {
 		return []byte{}, err
 	}
 	hasher := sha256.New()
-	hasher.Write(block.Bytes())
+	hasher.Write(block)
 	b.Hash = hash
 	return hasher.Sum(nil), err
 }
