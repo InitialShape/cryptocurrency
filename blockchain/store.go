@@ -190,25 +190,27 @@ func (s *Store) VerifyTransaction(transaction Transaction, index int) (bool, err
 	_, err := s.GetTransaction(transaction.Hash, false)
 	if err != nil && (err.Error() == "Bucket access error" || err.Error() == "EOF") {
 		// Check if transactions are valid here
-		inputTransaction, err := s.GetTransaction(
-			transaction.Inputs[0].TransactionHash, false)
+		for index, input := range transaction.Inputs {
+			inputTransaction, err := s.GetTransaction(input.TransactionHash, false)
+
 			if err != nil && (err.Error() == "Bucket access error" ||
 				err.Error() == "EOF") {
 					return false, errors.New("Input transaction doesn't exist")
 			} else {
-				pointer := fmt.Sprintf("-%d", 0)
-				pointerBytes := append(transaction.Inputs[0].TransactionHash,
-									   pointer...)
+				pointer := fmt.Sprintf("-%d", index)
+				pointerBytes := append(input.TransactionHash, pointer...)
 				_, err := s.Get([]byte("utxo"), pointerBytes)
 				if err != nil && (err.Error() == "Bucket access error" ||
 					err.Error() == "EOF") {
 					// output unspendable as doesn't exist
 					return false, errors.New("Output doesn't exist (anymore?)")
 				} else {
-					inputPublicKey := inputTransaction.Outputs[0].PublicKey
-					return transaction.Verify(inputPublicKey, 0)
+					inputPublicKey := inputTransaction.Outputs[index].PublicKey
+					return transaction.Verify(inputPublicKey, index)
 				}
 			}
+		}
+		return false, errors.New("Shouldn't reach statement")
 	} else if err == nil {
 		fmt.Println("Transaction with hash exists already", transaction.Hash, index)
 		return false, errors.New("Transaction exists already")

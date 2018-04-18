@@ -61,3 +61,31 @@ func TestTransactionSign(t *testing.T) {
 
 	assert.Equal(t, transaction.Inputs[0].Signature, signature)
 }
+
+func TestTransactionVerifySignature(t *testing.T) {
+	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	publicKey2, privateKey2, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Error(err)
+	}
+	outputs := []Output{Output{publicKey, 100}}
+	inputs := []Input{
+		Input{[]byte{}, []byte{}, 0},
+		Input{[]byte{}, []byte{}, 0},
+	}
+	transaction := Transaction{[]byte{}, inputs, outputs}
+	transaction.Sign(privateKey, 0)
+	transaction.Sign(privateKey2, 1)
+
+	result, err := transaction.Verify(publicKey, 0)
+	if err != nil {
+		t.Error(err)
+	}
+
+	assert.True(t, result)
+	result2, err := transaction.Verify(publicKey2, 1)
+	if err != nil {
+		t.Error(err)
+	}
+	assert.True(t, result2)
+}

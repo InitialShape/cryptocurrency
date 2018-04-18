@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"bytes"
+	"errors"
 	"crypto/sha256"
 	"github.com/mr-tron/base58/base58"
 	cbor "github.com/whyrusleeping/cbor/go"
@@ -69,6 +70,11 @@ func (t *Transaction) GetCBOR() ([]byte, error) {
 
 func (t *Transaction) GetHash() ([]byte, error) {
 	hash := t.Hash
+	var signatures [][]byte
+	for index, input := range t.Inputs {
+		signatures = append(signatures, input.Signature)
+		t.Inputs[index].Signature = []byte{}
+	}
 	t.Hash = []byte{}
 	transaction, err := t.GetCBOR()
 	if err != nil {
@@ -77,6 +83,9 @@ func (t *Transaction) GetHash() ([]byte, error) {
 	hasher := sha256.New()
 	hasher.Write(transaction)
 	t.Hash = hash
+	for index, _ := range t.Inputs {
+		t.Inputs[index].Signature = signatures[index]
+	}
 	return hasher.Sum(nil), err
 }
 
@@ -93,8 +102,7 @@ func (t *Transaction) Sign(privateKey ed25519.PrivateKey, index int) error {
 	if err != nil {
 		log.Fatal("Error signing transaction: ", err)
 	}
-	signature := ed25519.Sign(privateKey, hash)
-	t.Inputs[index].Signature = signature
+	t.Inputs[index].Signature = ed25519.Sign(privateKey, hash)
 	return err
 }
 
@@ -104,5 +112,10 @@ func (t *Transaction) Verify(publicKey ed25519.PublicKey, index int) (bool, erro
 		log.Fatal("Error validating transaction: ", err)
 		return false, err
 	}
-	return ed25519.Verify(publicKey, hash, t.Inputs[index].Signature), err
+
+	if ed25519.Verify(publicKey, hash, t.Inputs[index].Signature) {
+		return true, nil
+	} else {
+		return false, errors.New("Invalid signature")
+	}
 }

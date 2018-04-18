@@ -69,13 +69,45 @@ func TestGetTransactionWithNothingInBucket (t *testing.T) {
 
 }
 
-func TestPutBlockWithTransferTransaction(t *testing.T) {
+func TestPutBlockWithUnsignedTransferTransaction(t *testing.T) {
 	genesis, err := store.StoreGenesisBlock(5)
 	if err != nil {
 		t.Error(err)
 	}
 
 	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	outputs := []blockchain.Output{blockchain.Output{publicKey, 123}}
+	inputs := []blockchain.Input{blockchain.Input{[]byte{},
+		genesis.Transactions[0].Hash, 0}}
+	transaction := blockchain.Transaction{[]byte{}, inputs, outputs}
+	hash, err := transaction.GetHash()
+	if err != nil {
+		t.Error(err)
+	}
+	transaction.Hash = hash
+
+	coinbase, err := blockchain.GenerateCoinbase(publicKey, privateKey, 100)
+	if err != nil {
+		t.Error(err)
+	}
+
+	ch := make(chan blockchain.Block)
+	go miner.SearchBlock(2, 5, genesis.Hash,
+		[]blockchain.Transaction{coinbase, transaction}, ch)
+	newBlock := <-ch
+
+	err = store.AddBlock(newBlock)
+	assert.Error(t, err)
+}
+
+func TestPutBlockWithTransferTransaction(t *testing.T) {
+	genesis, err := store.StoreGenesisBlock(5)
+	if err != nil {
+		t.Error(err)
+	}
+
+	publicKey, _, err := ed25519.GenerateKey(rand.Reader)
+	privateKey, _ := base58.Decode("35DxrJipeuCAakHNnnPkBjwxQffYWKM1632kUFv9vKGRNREFSyM6awhyrucxTNbo9h693nPKeWonJ9sFkw6Tou4d")
 	outputs := []blockchain.Output{blockchain.Output{publicKey, 123}}
 	inputs := []blockchain.Input{blockchain.Input{[]byte{},
 		genesis.Transactions[0].Hash, 0}}
@@ -109,7 +141,8 @@ func TestSpendTransactionTwice(t *testing.T) {
 		t.Error(err)
 	}
 
-	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	publicKey, _, err := ed25519.GenerateKey(rand.Reader)
+	privateKey, _ := base58.Decode("35DxrJipeuCAakHNnnPkBjwxQffYWKM1632kUFv9vKGRNREFSyM6awhyrucxTNbo9h693nPKeWonJ9sFkw6Tou4d")
 	outputs := []blockchain.Output{blockchain.Output{publicKey, 123}}
 	inputs := []blockchain.Input{blockchain.Input{[]byte{},
 		genesis.Transactions[0].Hash, 0}}
@@ -131,8 +164,12 @@ func TestSpendTransactionTwice(t *testing.T) {
 		[]blockchain.Transaction{coinbase, transaction}, ch)
 	newBlock := <-ch
 	err = store.AddBlock(newBlock)
+	if err != nil {
+		t.Error(err)
+	}
 
-	publicKey, privateKey, err = ed25519.GenerateKey(rand.Reader)
+	publicKey, _, err = ed25519.GenerateKey(rand.Reader)
+	privateKey, _ = base58.Decode("35DxrJipeuCAakHNnnPkBjwxQffYWKM1632kUFv9vKGRNREFSyM6awhyrucxTNbo9h693nPKeWonJ9sFkw6Tou4d")
 	outputs = []blockchain.Output{blockchain.Output{publicKey, 123}}
 	inputs = []blockchain.Input{blockchain.Input{[]byte{},
 		genesis.Transactions[0].Hash, 0}}
