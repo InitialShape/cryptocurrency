@@ -49,14 +49,14 @@ func (p *Peer) Start() {
 		log.Fatal("Error listening: ", err)
 	}
 	defer listener.Close()
-	fmt.Printf("Peer is listening on %s:%s\n", p.Port, p.Host)
+	log.Printf("Peer is listening on %s:%s\n", p.Port, p.Host)
 
 	go p.CheckHeartBeat()
 
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			fmt.Println("Error accepting connection: ", err)
+			log.Println("Error accepting connection: ", err)
 		}
 
 		go p.Handle(conn)
@@ -68,25 +68,25 @@ func (p *Peer) Handle(conn net.Conn) {
 
 	n, err := conn.Read(buf)
 	if err != nil {
-		fmt.Println("Error reading: ", err)
+		log.Println("Error reading: ", err)
 	}
 
 	req := string(buf[:n])
 	resp := []byte{}
 
-	fmt.Printf("Received message from: %s %s\n", conn.RemoteAddr().String(), req)
+	log.Printf("Received message from: %s %s\n", conn.RemoteAddr().String(), req)
 
-	// Buffer is 1024 big, even after casting to string
-	if req == "PING" {
+	if strings.Contains(req, "PING") {
+		peers := strings.Split(req, " ")
+		if len(peers) > 1 {
+			p.RegisterPeer(peers[1])
+		}
 		resp = p.Pong()
-	}
-	if strings.Contains(req, "REGISTER") {
-		resp = p.RegisterPeer(conn.RemoteAddr().String())
 	}
 	if strings.Contains(req, "PEERS") {
 		peers, err := p.GetPeers()
 		if err != nil {
-			fmt.Println("Error getting peers on request: ", err)
+			log.Println("Error getting peers on request: ", err)
 		}
 		resp = peers
 	}
@@ -96,7 +96,7 @@ func (p *Peer) Handle(conn net.Conn) {
 		var transaction Transaction
 		err := json.Unmarshal([]byte(transactionJSON), &transaction)
 		if err != nil {
-			fmt.Println("Couldn't read transaction JSON: ", err)
+			log.Println("Couldn't read transaction JSON: ", err)
 		}
 		err = p.Store.AddTransaction(transaction)
 		fmt.Println("Added new transaction: ", transactionJSON)
@@ -181,8 +181,9 @@ func (p *Peer) Ping(peer string) error {
 		p.Store.DeletePeer(peer)
 		return err
 	}
+	msg := fmt.Sprintf("PING %s:%s", p.Port, p.Host)
 
-	conn.Write([]byte("PING"))
+	conn.Write([]byte(msg))
 	resp, err := ioutil.ReadAll(conn)
 	if err != nil {
 		p.Store.DeletePeer(peer)
