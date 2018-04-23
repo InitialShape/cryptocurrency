@@ -301,6 +301,11 @@ func (s *Store) AddBlock(block Block) error {
 			}
 		}
 
+		_, err := s.Get([]byte("blocks"), block.Hash)
+		if err != nil {
+			go s.Peer.GossipBlock(block)
+		}
+
 		err = s.storeBlock(block)
 		if err != nil {
 			log.Fatal("Error storing block", err)

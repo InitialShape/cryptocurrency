@@ -101,6 +101,17 @@ func (p *Peer) Handle(conn net.Conn) {
 		err = p.Store.AddTransaction(transaction)
 		fmt.Println("Added new transaction: ", transactionJSON)
 	}
+	if strings.Contains(req, "BLOCK") {
+		// in new function also check for index
+		blockJSON := strings.Split(req, " ")[1]
+		var block Block
+		err := json.Unmarshal([]byte(blockJSON), &block)
+		if err != nil {
+			fmt.Println("Couldn't read block JSON: ", err)
+		}
+		err = p.Store.AddBlock(block)
+		log.Println("Added new block: ", blockJSON)
+	}
 
 	conn.Write(resp)
 	conn.Close()
@@ -153,26 +164,6 @@ func (p *Peer) DiscoverPeers(peer string) error {
 	return err
 }
 
-func (p *Peer) SendTransaction(peer string, transaction Transaction) error {
-	conn, err := net.Dial(CONN_TYPE, peer)
-	if err != nil {
-		fmt.Println("Error dialing peer on sending transaction: ", err)
-		fmt.Println("Deleting peer: ", peer)
-		p.Store.DeletePeer(peer)
-		return err
-	}
-
-	header := []byte("TRANSACTION ")
-	transactionJSON, err := json.Marshal(transaction)
-	if err != nil {
-		log.Fatal("Error marshalling transaction: ", err)
-	}
-	message := append(header, transactionJSON...)
-
-	conn.Write(message)
-	return err
-}
-
 func (p *Peer) Ping(peer string) error {
 	conn, err := net.Dial(CONN_TYPE, peer)
 	if err != nil {
@@ -213,13 +204,48 @@ func (p *Peer) Discovery() error {
 	return errors.New("Cannot be reached")
 }
 
+func (p *Peer) SendPayload(peer string, header []byte, payload []byte) error {
+	conn, err := net.Dial(CONN_TYPE, peer)
+	if err != nil {
+		fmt.Println("Error dialing peer on sending payload: ", err)
+		fmt.Println("Deleting peer: ", peer)
+		p.Store.DeletePeer(peer)
+		return err
+	}
+
+	message := append(header, payload...)
+	conn.Write(message)
+	return err
+}
+
+
 func (p *Peer) GossipTransaction(transaction Transaction) {
 	peers, err := p.Store.GetPeers()
 	if err != nil {
 		fmt.Println("Error getting peers: ", err)
 	}
+	transactionJSON, err := json.Marshal(transaction)
+	if err != nil {
+		log.Fatal("Error marshalling transaction: ", err)
+	}
+
 	for _, peer := range peers {
-		p.SendTransaction(peer, transaction)
+		p.SendPayload(peer, []byte("TRANSACTION "), transactionJSON)
+	}
+}
+
+func (p *Peer) GossipBlock(block Block) {
+	peers, err := p.Store.GetPeers()
+	if err != nil {
+		fmt.Println("Error getting peers: ", err)
+	}
+	blockJSON, err := json.Marshal(block)
+	if err != nil {
+		log.Fatal("Error marshalling transaction: ", err)
+	}
+
+	for _, peer := range peers {
+		p.SendPayload(peer, []byte("BLOCK "), blockJSON)
 	}
 }
 
