@@ -43,9 +43,11 @@ help out. Let's make this a real cryptocurrency!
 git clone https://github.com/InitialShape/cryptocurrency
 dep ensure
 cd github.com/InitialShape/cryptocurrency
+# Generate a wallet.txt file in ./
+go run main.go --generate_keys
 # go run main.go <dbname> <port TCP> <port http>
 # for example
-go run main db 1234 8000
+go run main.go db 1234 8000
 
 # to mine (have the full node running)
 # go run cmd/miner/miner.go <full node http> <nr of processes>
