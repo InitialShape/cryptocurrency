@@ -180,6 +180,38 @@ func (s *Store) DeletePeer(peer string) error {
 	return err
 }
 
+func (s *Store) GetChain() ([]Block, error) {
+	var blocks []Block
+	previousBlock, err := s.Get([]byte("blocks"), []byte("root"))
+	if err != nil {
+		return blocks, err
+	}
+
+	for {
+		data, err := s.Get([]byte("blocks"), previousBlock)
+		if err != nil {
+			return blocks, err
+		}
+
+		var root Block
+		dec := cbor.NewDecoder(bytes.NewReader(data))
+		err = dec.Decode(&root)
+		if err != nil {
+			return blocks, err
+		}
+
+		// preprend
+		blocks = append([]Block{root}, blocks...)
+
+		if len(root.PreviousBlock) > 0 {
+			previousBlock = root.PreviousBlock
+		} else {
+			break
+		}
+	}
+	return blocks, nil
+}
+
 func (s *Store) VerifyTransaction(transaction Transaction, index int) (bool, error) {
 	// TODO: Cannot verify if dependent transaction is in block
 	if index == 0 && len(transaction.Inputs[0].TransactionHash) == 0 &&
@@ -267,11 +299,41 @@ func (s *Store) storeBlock(block Block) error {
 	return err
 }
 
+func (s *Store) EvaluateChains(chains [][]Block) ([]Block) {
+	difficulties := make([]int, len(chains))
+	for index, chain := range chains {
+		for _, block := range chain {
+			difficulties[index] += block.Difficulty
+		}
+	}
+
+	var mostWork int
+	for index, difficulty := range difficulties {
+		if index == 0 {
+			mostWork = 0
+		} else if difficulty > difficulties[mostWork] {
+			mostWork = index
+		}
+	}
+
+	return chains[mostWork]
+}
+
 func (s *Store) AddBlock(block Block) error {
 	data, err := s.Get([]byte("blocks"), block.PreviousBlock)
 	if err != nil {
-		log.Fatal("Error getting previous block", err)
-		return err
+		log.Println("Chain ran out of sync, getting blocks from peers")
+		chains, err := s.Peer.Download()
+		if err != nil {
+			log.Println("Error downloading peer chain", err)
+		}
+
+		chain := s.EvaluateChains(chains)
+		chain = append(chain, block)
+
+		for _, block := range chain[1:] {
+			s.AddBlock(block)
+		}
 	}
 
 	var root Block
@@ -305,6 +367,7 @@ func (s *Store) AddBlock(block Block) error {
 		if err != nil {
 			go s.Peer.GossipBlock(block)
 		}
+
 
 		err = s.storeBlock(block)
 		if err != nil {

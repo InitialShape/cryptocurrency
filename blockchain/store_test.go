@@ -42,6 +42,66 @@ func TestPutBlock(t *testing.T) {
 	}
 }
 
+func TestGetChain(t *testing.T) {
+	genesis, err := store.StoreGenesisBlock(5)
+	if err != nil {
+		t.Error(err)
+	}
+
+	ch := make(chan blockchain.Block)
+	go miner.SearchBlock(1, 5, genesis.Hash, nil, ch)
+	firstBlock := <-ch
+
+	err = store.AddBlock(firstBlock)
+	if err != nil {
+		t.Error(err)
+	}
+
+	ch = make(chan blockchain.Block)
+	go miner.SearchBlock(2, 5, firstBlock.Hash, nil, ch)
+	secondBlock := <-ch
+
+	err = store.AddBlock(secondBlock)
+	if err != nil {
+		t.Error(err)
+	}
+
+	blocks, err := store.GetChain()
+	if err != nil {
+		t.Error(err)
+	}
+
+	assert.Equal(t, []blockchain.Block{genesis, firstBlock, secondBlock}, blocks)
+}
+
+func TestEvaluateChains(t *testing.T) {
+	genesis, err := store.StoreGenesisBlock(5)
+	if err != nil {
+		t.Error(err)
+	}
+
+	ch := make(chan blockchain.Block)
+	go miner.SearchBlock(1, 5, genesis.Hash, nil, ch)
+	firstBlock := <-ch
+	ch = make(chan blockchain.Block)
+	go miner.SearchBlock(2, 5, firstBlock.Hash, nil, ch)
+	secondBlock := <-ch
+	ch = make(chan blockchain.Block)
+	go miner.SearchBlock(3, 5, secondBlock.Hash, nil, ch)
+	thirdBlock := <-ch
+
+	var firstChain = []blockchain.Block{firstBlock, secondBlock, thirdBlock}
+	var secondChain = []blockchain.Block{firstBlock}
+
+	var chains = [][]blockchain.Block{
+		secondChain,
+		firstChain,
+	}
+
+	chain := store.EvaluateChains(chains)
+	assert.Equal(t, firstChain, chain)
+}
+
 func TestGetTransactionWithNothingInBucket (t *testing.T) {
 	transaction, err := store.GetTransaction([]byte("transactions"), false)
 	if assert.Error(t, err) {

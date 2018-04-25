@@ -112,10 +112,34 @@ func (p *Peer) Handle(conn net.Conn) {
 		err = p.Store.AddBlock(block)
 		log.Println("Added new block: ", blockJSON)
 	}
+	if strings.Contains(req, "CHAIN") {
+		blocks, err := p.GetChain()
+		if err != nil {
+			log.Fatal("Error getting chain", err)
+		}
+		resp = blocks
+	}
 
 	conn.Write(resp)
 	conn.Close()
 }
+
+func (p *Peer) GetChain() ([]byte, error) {
+	blocks, err := p.Store.GetChain()
+	if err != nil {
+		log.Println("Error getting chain from store", err)
+		return []byte{}, err
+	}
+
+	blocksJSON, err := json.Marshal(blocks)
+	if err != nil {
+		log.Println("Error marshalling blocks to JSON", err)
+		return []byte{}, err
+	}
+
+	return blocksJSON, err
+}
+
 
 func (p *Peer) GetPeers() ([]byte, error) {
 	peers, err := p.Store.GetPeers()
@@ -138,6 +162,7 @@ func (p *Peer) RegisterPeer(peer string) []byte {
 	}
 	return []byte("NOT REGISTERED")
 }
+
 
 func (p *Peer) DiscoverPeers(peer string) error {
 	fmt.Println("Requesting new peers from: ", peer)
@@ -164,11 +189,56 @@ func (p *Peer) DiscoverPeers(peer string) error {
 	return err
 }
 
+func (p *Peer) SendTransaction(peer string, transaction Transaction) error {
+	conn, err := net.Dial(CONN_TYPE, peer)
+	if err != nil {
+		fmt.Println("Error dialing peer on sending transaction: ", err)
+		fmt.Println("Deleting peer: ", peer)
+		p.Store.DeletePeer(peer)
+		return err
+	}
+
+	header := []byte("TRANSACTION ")
+	transactionJSON, err := json.Marshal(transaction)
+	if err != nil {
+		log.Fatal("Error marshalling transaction: ", err)
+	}
+	message := append(header, transactionJSON...)
+
+	conn.Write(message)
+	return err
+}
+
+func (p *Peer) DownloadChain(peer string) ([]Block, error) {
+	var chain []Block
+	conn, err := net.Dial(CONN_TYPE, peer)
+	if err != nil {
+		log.Println("Error dialing peer, deleting peer: ", peer)
+		p.Store.DeletePeer(peer)
+		return chain, err
+	}
+
+	msg := []byte("CHAIN")
+	conn.Write(msg)
+
+	resp, err := ioutil.ReadAll(conn)
+	if err != nil {
+		log.Println("Error reading response, deleting peer: ", peer)
+		p.Store.DeletePeer(peer)
+		return chain, err
+	}
+	err = json.Unmarshal(resp, &chain)
+	if err != nil {
+		log.Println("Couldn't read chain JSON: ", err)
+	}
+
+	return chain, err
+}
+
 func (p *Peer) Ping(peer string) error {
 	conn, err := net.Dial(CONN_TYPE, peer)
 	if err != nil {
-		fmt.Println("Error dialing peer: ", peer, err)
-		fmt.Println("Deleting peer: ", peer)
+		log.Println("Error dialing peer, Deleting peer: ", peer)
 		p.Store.DeletePeer(peer)
 		return err
 	}
@@ -187,6 +257,27 @@ func (p *Peer) Ping(peer string) error {
 		fmt.Println("Received message from: ", conn.RemoteAddr().String(), string(resp))
 	}
 	return err
+}
+
+func (p *Peer) Download() ([][]Block, error) {
+	var chains [][]Block
+	peers, err := p.Store.GetPeers()
+	if err != nil {
+		log.Fatal("Error getting peers: ", err)
+		return chains, err
+	}
+
+	// TODO: Change this to a smaller set of peers when the network scales
+	//		 to more nodes than just a hand full.
+	for _, peer := range peers {
+		chain, err := p.DownloadChain(peer)
+		if err != nil {
+			log.Println("Couldn't download chain from", peer)
+		} else {
+			chains = append(chains, chain)
+		}
+	}
+	return chains, err
 }
 
 func (p *Peer) Discovery() error {
@@ -259,4 +350,5 @@ func (p *Peer) CheckHeartBeat() {
 			p.Ping(peer)
 		}
 	}
+
 }
