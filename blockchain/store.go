@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/boltdb/bolt"
-	"github.com/mr-tron/base58/base58"
 	cbor "github.com/whyrusleeping/cbor/go"
+	"github.com/InitialShape/blockchain/utils"
 	"log"
 	"time"
 )
@@ -69,8 +69,7 @@ func (s *Store) Delete(bucket []byte, key []byte) error {
 }
 
 func (s *Store) StoreGenesisBlock(difficulty int) (Block, error) {
-	publicKey, _ := base58.Decode("6zjRZQyp47BjwArFoLpvzo8SHwwWeW571kJNiqWfSrFT")
-	privateKey, _ := base58.Decode("35DxrJipeuCAakHNnnPkBjwxQffYWKM1632kUFv9vKGRNREFSyM6awhyrucxTNbo9h693nPKeWonJ9sFkw6Tou4d")
+	publicKey, privateKey, err := utils.GetWallet()
 
 	block, err := GenerateGenesisBlock(publicKey, privateKey, difficulty)
 	if err != nil {

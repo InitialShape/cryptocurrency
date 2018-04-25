@@ -7,10 +7,13 @@ import (
 	"os"
 	"fmt"
 	"log"
+	"io/ioutil"
+	"strings"
 )
 
+var path = "wallet.txt"
+
 func GenerateWallet() error {
-		path := "wallet.txt"
 		publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
 		if err != nil {
 			return err
@@ -48,4 +51,22 @@ func GenerateWallet() error {
 			log.Println("Didn't create new key file as wallet.txt already exists")
 			return nil
 		}
+}
+
+func GetWallet() (ed25519.PublicKey, ed25519.PrivateKey, error) {
+	content, err := ioutil.ReadFile(path)
+	if err != nil {
+		return ed25519.PublicKey{}, ed25519.PrivateKey{}, err
+	}
+
+	keys := strings.Split(string(content), "\n")
+	publicKey, err := base58.Decode(keys[0])
+	if err != nil {
+		return ed25519.PublicKey{}, ed25519.PrivateKey{}, err
+	}
+	privateKey, err := base58.Decode(keys[1])
+	if err != nil {
+		return ed25519.PublicKey{}, ed25519.PrivateKey{}, err
+	}
+	return publicKey, privateKey, err
 }

@@ -19,10 +19,12 @@ func main() {
 					  "Generates keys for the wallet and miner")
 	flag.Parse()
 	if *keys {
+			// key generation mode
 			utils.GenerateWallet()
 	} else {
 		// normal operation mode
 		store = blockchain.Store{}
+		// TODO: For other os.Args use flag lib
 		store.Open(os.Args[1], &peer)
 		peer = blockchain.Peer{"localhost", os.Args[2], store}
 		go peer.Start()
