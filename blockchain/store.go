@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"log"
 	"github.com/boltdb/bolt"
 	"github.com/mr-tron/base58/base58"
 	cbor "github.com/whyrusleeping/cbor/go"
+	"log"
 	"time"
 )
 
@@ -92,10 +92,13 @@ func (s *Store) AddTransaction(transaction Transaction) error {
 		return err
 	}
 
-	newTransaction, err := s.GetTransaction(transaction.Hash, true)
+	transactionMempool, err := s.GetTransaction(transaction.Hash, true)
 	// TODO: Ideally we'd check for an empty struct here
-	if newTransaction.Hash == nil {
-		go s.Peer.GossipTransaction(transaction)
+	if len(transactionMempool.Hash) == 0 {
+		transactionBlocks, _ := s.GetTransaction(transaction.Hash, false)
+		if len(transactionBlocks.Hash) == 0 {
+			go s.Peer.GossipTransaction(transaction)
+		}
 	}
 
 	err = s.Put([]byte("mempool"), transaction.Hash, cbor)
@@ -227,7 +230,7 @@ func (s *Store) VerifyTransaction(transaction Transaction, index int) (bool, err
 
 			if err != nil && (err.Error() == "Bucket access error" ||
 				err.Error() == "EOF") {
-					return false, errors.New("Input transaction doesn't exist")
+				return false, errors.New("Input transaction doesn't exist")
 			} else {
 				pointer := fmt.Sprintf("-%d", index)
 				pointerBytes := append(input.TransactionHash, pointer...)
@@ -299,10 +302,11 @@ func (s *Store) storeBlock(block Block) error {
 	return err
 }
 
-func (s *Store) EvaluateChains(chains [][]Block) ([]Block) {
+func (s *Store) EvaluateChains(chains [][]Block) []Block {
 	difficulties := make([]int, len(chains))
 	for index, chain := range chains {
 		for _, block := range chain {
+			// take actual block difficulty in bits here
 			difficulties[index] += block.Difficulty
 		}
 	}
@@ -367,7 +371,6 @@ func (s *Store) AddBlock(block Block) error {
 		if err != nil {
 			go s.Peer.GossipBlock(block)
 		}
-
 
 		err = s.storeBlock(block)
 		if err != nil {

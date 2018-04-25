@@ -66,6 +66,7 @@ func GenerateBlock(path string, ch chan<- blockchain.Block) {
 
 func SearchBlock(height int, difficulty int, previousBlock []byte,
 	transactions []blockchain.Transaction, ch chan<- blockchain.Block) {
+
 	newBlock := blockchain.Block{height, []byte{}, transactions, previousBlock,
 		difficulty, 0}
 

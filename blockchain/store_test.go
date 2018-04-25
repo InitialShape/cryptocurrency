@@ -2,8 +2,8 @@ package blockchain_test
 
 import (
 	"bytes"
-	"errors"
 	"crypto/rand"
+	"errors"
 	"github.com/InitialShape/blockchain/blockchain"
 	"github.com/InitialShape/blockchain/miner"
 	"github.com/mr-tron/base58/base58"
@@ -102,7 +102,7 @@ func TestEvaluateChains(t *testing.T) {
 	assert.Equal(t, firstChain, chain)
 }
 
-func TestGetTransactionWithNothingInBucket (t *testing.T) {
+func TestGetTransactionWithNothingInBucket(t *testing.T) {
 	transaction, err := store.GetTransaction([]byte("transactions"), false)
 	if assert.Error(t, err) {
 		assert.Equal(t, err, errors.New("EOF"))
@@ -111,7 +111,7 @@ func TestGetTransactionWithNothingInBucket (t *testing.T) {
 	privateKey, _ := base58.Decode("35DxrJipeuCAakHNnnPkBjwxQffYWKM1632kUFv9vKGRNREFSyM6awhyrucxTNbo9h693nPKeWonJ9sFkw6Tou4d")
 	publicKey, _ := base58.Decode("6zjRZQyp47BjwArFoLpvzo8SHwwWeW571kJNiqWfSrFT")
 	outputs := []blockchain.Output{blockchain.Output{publicKey, 100}}
-	inputs := []blockchain.Input{blockchain.Input{[]byte{}, []byte{} , 0}}
+	inputs := []blockchain.Input{blockchain.Input{[]byte{}, []byte{}, 0}}
 	transaction = blockchain.Transaction{[]byte{}, inputs, outputs}
 	hash, err := transaction.GetHash()
 	if err != nil {

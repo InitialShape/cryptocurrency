@@ -2,8 +2,8 @@ package blockchain
 
 import (
 	"bytes"
-	"errors"
 	"crypto/sha256"
+	"errors"
 	"github.com/mr-tron/base58/base58"
 	cbor "github.com/whyrusleeping/cbor/go"
 	"golang.org/x/crypto/ed25519"

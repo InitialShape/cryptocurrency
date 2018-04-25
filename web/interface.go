@@ -125,9 +125,9 @@ func PutBlock(w http.ResponseWriter, r *http.Request) {
 	}
 	err = Store.AddBlock(block)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("500 - block's difficulty doesn't match"))
+		w.Write([]byte("500 - block isn't valid"))
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -144,7 +144,7 @@ func PutTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 	err = Store.AddTransaction(transaction)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(""))
 	}

@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 )
+
 // TODO: Use log for logging
 
 const (
@@ -140,7 +141,6 @@ func (p *Peer) GetChain() ([]byte, error) {
 	return blocksJSON, err
 }
 
-
 func (p *Peer) GetPeers() ([]byte, error) {
 	peers, err := p.Store.GetPeers()
 	if err != nil {
@@ -162,7 +162,6 @@ func (p *Peer) RegisterPeer(peer string) []byte {
 	}
 	return []byte("NOT REGISTERED")
 }
-
 
 func (p *Peer) DiscoverPeers(peer string) error {
 	fmt.Println("Requesting new peers from: ", peer)
@@ -308,7 +307,6 @@ func (p *Peer) SendPayload(peer string, header []byte, payload []byte) error {
 	conn.Write(message)
 	return err
 }
-
 
 func (p *Peer) GossipTransaction(transaction Transaction) {
 	peers, err := p.Store.GetPeers()
