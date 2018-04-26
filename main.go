@@ -26,10 +26,16 @@ func main() {
 		store = blockchain.Store{}
 		// TODO: For other os.Args use flag lib
 		store.Open(os.Args[1], &peer)
-		peer = blockchain.Peer{"localhost", os.Args[2], store}
+
+		ip, err := utils.GetExternalIP()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		peer = blockchain.Peer{os.Args[2], ip, store}
 		go peer.Start()
 
-		_, err := store.StoreGenesisBlock(20)
+		_, err = store.StoreGenesisBlock(20)
 		if err != nil {
 			log.Fatal(err)
 		}
