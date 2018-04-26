@@ -44,13 +44,13 @@ func (p *Peer) RegisterDefaultPeers() error {
 func (p *Peer) Start() {
 	p.RegisterDefaultPeers()
 	go p.Discovery()
-	address := fmt.Sprintf("%s:%s", p.Port, p.Host)
+	address := fmt.Sprintf(":%s", p.Port)
 	listener, err := net.Listen(CONN_TYPE, address)
 	if err != nil {
 		log.Fatal("Error listening: ", err)
 	}
 	defer listener.Close()
-	log.Printf("Peer is listening on %s:%s\n", p.Port, p.Host)
+	log.Printf("Peer is listening on %s:%s\n", p.Host, p.Port)
 
 	go p.CheckHeartBeat()
 

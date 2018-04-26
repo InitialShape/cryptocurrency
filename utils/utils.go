@@ -9,6 +9,7 @@ import (
 	"log"
 	"io/ioutil"
 	"strings"
+	"net/http"
 )
 
 var path = "wallet.txt"
@@ -69,4 +70,15 @@ func GetWallet() (ed25519.PublicKey, ed25519.PrivateKey, error) {
 		return ed25519.PublicKey{}, ed25519.PrivateKey{}, err
 	}
 	return publicKey, privateKey, err
+}
+
+// TODO: Is there a better way than this?
+func GetExternalIP() (string, error) {
+	resp, err := http.Get("http://myexternalip.com/raw")
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	return string(body), err
 }
