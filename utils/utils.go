@@ -80,5 +80,6 @@ func GetExternalIP() (string, error) {
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
-	return string(body), err
+	bodyStrings := strings.Split(string(body), "\n")
+	return bodyStrings[0], err
 }
