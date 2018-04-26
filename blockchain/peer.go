@@ -154,7 +154,7 @@ func (p *Peer) Pong() []byte {
 }
 
 func (p *Peer) RegisterPeer(peer string) []byte {
-	self := fmt.Sprintf("%s:%s", p.Port, p.Host)
+	self := fmt.Sprintf("%s:%s", p.Host, p.Port)
 	if peer != self {
 		p.Store.AddPeer(peer)
 		fmt.Println("Registered new peer: ", peer)
@@ -241,7 +241,7 @@ func (p *Peer) Ping(peer string) error {
 		p.Store.DeletePeer(peer)
 		return err
 	}
-	msg := fmt.Sprintf("PING %s:%s", p.Port, p.Host)
+	msg := fmt.Sprintf("PING %s:%s", p.Host, p.Port)
 
 	conn.Write([]byte(msg))
 	resp, err := ioutil.ReadAll(conn)
