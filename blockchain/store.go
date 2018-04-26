@@ -61,8 +61,12 @@ func (s *Store) Get(bucket []byte, key []byte) ([]byte, error) {
 func (s *Store) Delete(bucket []byte, key []byte) error {
 	err := s.DB.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(bucket)
-		err := b.Delete(key)
-		return err
+		if b != nil {
+			err := b.Delete(key)
+			return err
+		} else {
+			return errors.New("Bucket access error")
+		}
 	})
 
 	return err

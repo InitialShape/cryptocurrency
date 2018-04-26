@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/InitialShape/blockchain/blockchain"
+	"github.com/InitialShape/blockchain/utils"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -67,6 +68,16 @@ func GenerateBlock(path string, ch chan<- blockchain.Block) {
 func SearchBlock(height int, difficulty int, previousBlock []byte,
 	transactions []blockchain.Transaction, ch chan<- blockchain.Block) {
 
+	publicKey, privateKey, err := utils.GetWallet()
+	if err != nil {
+		log.Fatal(err)
+	}
+	coinbase, err := blockchain.GenerateCoinbase(publicKey, privateKey, 25)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// preprend
+	transactions = append([]blockchain.Transaction{coinbase}, transactions...)
 	newBlock := blockchain.Block{height, []byte{}, transactions, previousBlock,
 		difficulty, 0}
 
