@@ -305,7 +305,10 @@ func (s *Store) storeBlock(block Block) error {
 	return err
 }
 
-func (s *Store) EvaluateChains(chains [][]Block) []Block {
+func (s *Store) EvaluateChains(chains [][]Block) ([]Block, error) {
+	if len(chains) == 0 {
+		return []Block{}, errors.New("Error evaluating chain")
+	}
 	difficulties := make([]int, len(chains))
 	for index, chain := range chains {
 		for _, block := range chain {
@@ -323,7 +326,7 @@ func (s *Store) EvaluateChains(chains [][]Block) []Block {
 		}
 	}
 
-	return chains[mostWork]
+	return chains[mostWork], nil
 }
 
 func (s *Store) AddBlock(block Block) error {
@@ -335,11 +338,15 @@ func (s *Store) AddBlock(block Block) error {
 			log.Println("Error downloading peer chain", err)
 		}
 
-		chain := s.EvaluateChains(chains)
+		chain, err := s.EvaluateChains(chains)
+		if err != nil {
+			log.Println("Error evaluating chains", err)
+		}
 		chain = append(chain, block)
 
-		for _, block := range chain[1:] {
-			s.AddBlock(block)
+		for _, block := range chain {
+			err = s.AddBlock(block)
+
 		}
 	}
 
