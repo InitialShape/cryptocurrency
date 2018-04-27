@@ -330,78 +330,80 @@ func (s *Store) EvaluateChains(chains [][]Block) ([]Block, error) {
 }
 
 func (s *Store) AddBlock(block Block) error {
-	data, err := s.Get([]byte("blocks"), block.PreviousBlock)
-	if err != nil {
-		log.Println("Chain ran out of sync, getting blocks from peers")
-		chains, err := s.Peer.Download()
+	if len(block.PreviousBlock) != 0 {
+		data, err := s.Get([]byte("blocks"), block.PreviousBlock)
 		if err != nil {
-			log.Println("Error downloading peer chain", err)
-		}
-
-		chain, err := s.EvaluateChains(chains)
-		if err != nil {
-			log.Println("Error evaluating chains", err)
-		}
-		chain = append(chain, block)
-
-		for _, block := range chain {
-			err = s.AddBlock(block)
-
-		}
-	}
-
-	var root Block
-	dec := cbor.NewDecoder(bytes.NewReader(data))
-	err = dec.Decode(&root)
-	if err != nil {
-		return err
-	}
-
-	if HashMatchesDifficulty(block.Hash, root.Difficulty) {
-
-		// check for duplicates in block
-		visited := make(map[string]bool)
-		for _, transaction := range block.Transactions {
-			if visited[string(transaction.Hash)] {
-				return errors.New("Transaction duplicate in block")
-			} else {
-				visited[string(transaction.Hash)] = true
-			}
-		}
-
-		// verify transactions' integrity
-		for index, transaction := range block.Transactions {
-			_, err := s.VerifyTransaction(transaction, index)
+			log.Println("Chain ran out of sync, getting blocks from peers")
+			chains, err := s.Peer.Download()
 			if err != nil {
-				return err
+				log.Println("Error downloading peer chain", err)
+			}
+
+			chain, err := s.EvaluateChains(chains)
+			if err != nil {
+				log.Println("Error evaluating chains", err)
+			}
+			chain = append(chain, block)
+
+			for _, block := range chain {
+				s.AddBlock(block)
 			}
 		}
 
-		_, err := s.Get([]byte("blocks"), block.Hash)
+		var root Block
+		dec := cbor.NewDecoder(bytes.NewReader(data))
+		err = dec.Decode(&root)
 		if err != nil {
-			go s.Peer.GossipBlock(block)
-		}
-
-		err = s.storeBlock(block)
-		if err != nil {
-			log.Fatal("Error storing block", err)
 			return err
 		}
 
-		// delete all transactions from mempool
-		for _, transaction := range block.Transactions {
-			s.Delete([]byte("mempool"), transaction.Hash)
-
-			for index, input := range transaction.Inputs {
-				pointer := fmt.Sprintf("-%d", index)
-				pointerBytes := append(input.TransactionHash, pointer...)
-				s.Delete([]byte("utxo"), pointerBytes)
-			}
+		if HashMatchesDifficulty(block.Hash, root.Difficulty) {
+			// noop
+		} else {
+			return errors.New("Difficulty too low")
 		}
-
-		return err
-	} else {
-		return errors.New("Difficulty too low")
 	}
 
+
+	// check for duplicates in block
+	visited := make(map[string]bool)
+	for _, transaction := range block.Transactions {
+		if visited[string(transaction.Hash)] {
+			return errors.New("Transaction duplicate in block")
+		} else {
+			visited[string(transaction.Hash)] = true
+		}
+	}
+
+	// verify transactions' integrity
+	for index, transaction := range block.Transactions {
+		_, err := s.VerifyTransaction(transaction, index)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err := s.Get([]byte("blocks"), block.Hash)
+	if err != nil {
+		go s.Peer.GossipBlock(block)
+	}
+
+	err = s.storeBlock(block)
+	if err != nil {
+		log.Fatal("Error storing block", err)
+		return err
+	}
+
+	// delete all transactions from mempool
+	for _, transaction := range block.Transactions {
+		s.Delete([]byte("mempool"), transaction.Hash)
+
+		for index, input := range transaction.Inputs {
+			pointer := fmt.Sprintf("-%d", index)
+			pointerBytes := append(input.TransactionHash, pointer...)
+			s.Delete([]byte("utxo"), pointerBytes)
+		}
+	}
+
+	return err
 }
