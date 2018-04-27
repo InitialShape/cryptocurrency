@@ -13,8 +13,6 @@ import (
 	"time"
 )
 
-// TODO: Use log for logging
-
 const (
 	CONN_TYPE = "tcp"
 )
@@ -100,7 +98,7 @@ func (p *Peer) Handle(conn net.Conn) {
 			log.Println("Couldn't read transaction JSON: ", err)
 		}
 		err = p.Store.AddTransaction(transaction)
-		fmt.Println("Added new transaction: ", transactionJSON)
+		log.Println("Added new transaction: ", transactionJSON)
 	}
 	if strings.Contains(req, "BLOCK") {
 		// in new function also check for index
@@ -108,7 +106,7 @@ func (p *Peer) Handle(conn net.Conn) {
 		var block Block
 		err := json.Unmarshal([]byte(blockJSON), &block)
 		if err != nil {
-			fmt.Println("Couldn't read block JSON: ", err)
+			log.Println("Couldn't read block JSON: ", err)
 		}
 		err = p.Store.AddBlock(block)
 		log.Println("Added new block: ", blockJSON)
@@ -157,30 +155,30 @@ func (p *Peer) RegisterPeer(peer string) []byte {
 	self := fmt.Sprintf("%s:%s", p.Host, p.Port)
 	if peer != self {
 		p.Store.AddPeer(peer)
-		fmt.Println("Registered new peer: ", peer)
+		log.Println("Registered new peer: ", peer)
 		return []byte("REGISTERED")
 	}
 	return []byte("NOT REGISTERED")
 }
 
 func (p *Peer) DiscoverPeers(peer string) error {
-	fmt.Println("Requesting new peers from: ", peer)
+	log.Println("Requesting new peers from: ", peer)
 	conn, err := net.Dial(CONN_TYPE, peer)
 	if err != nil {
-		fmt.Println("Error dialing peer: ", peer, err)
-		fmt.Println("Removing peer: ", peer)
+		log.Println("Error dialing peer: ", peer, err)
+		log.Println("Removing peer: ", peer)
 		p.Store.DeletePeer(peer)
 		return err
 	}
 	conn.Write([]byte("PEERS"))
 	resp, err := ioutil.ReadAll(conn)
 	if err != nil {
-		fmt.Println("Error reading PEERS response: ", err)
+		log.Println("Error reading PEERS response: ", err)
 		return err
 	}
 	respString := string(resp)
 	peers := strings.Split(respString, "\n")
-	fmt.Println("New peers received: ", peers)
+	log.Println("New peers received: ", peers)
 	for _, peer := range peers {
 		p.RegisterPeer(peer)
 	}
@@ -191,8 +189,8 @@ func (p *Peer) DiscoverPeers(peer string) error {
 func (p *Peer) SendTransaction(peer string, transaction Transaction) error {
 	conn, err := net.Dial(CONN_TYPE, peer)
 	if err != nil {
-		fmt.Println("Error dialing peer on sending transaction: ", err)
-		fmt.Println("Deleting peer: ", peer)
+		log.Println("Error dialing peer on sending transaction: ", err)
+		log.Println("Deleting peer: ", peer)
 		p.Store.DeletePeer(peer)
 		return err
 	}
@@ -253,7 +251,7 @@ func (p *Peer) Ping(peer string) error {
 	if string(resp) != "PONG" {
 		p.Store.DeletePeer(peer)
 	} else {
-		fmt.Println("Received message from: ", conn.RemoteAddr().String(), string(resp))
+		log.Println("Received message from: ", conn.RemoteAddr().String(), string(resp))
 	}
 	return err
 }
@@ -281,7 +279,7 @@ func (p *Peer) Download() ([][]Block, error) {
 
 func (p *Peer) Discovery() error {
 	for range time.Tick(time.Second * 15) {
-		fmt.Println("Peer discovery initialized")
+		log.Println("Peer discovery initialized")
 		peers, err := p.Store.GetPeers()
 		if err != nil {
 			log.Fatal("Error getting peers: ", err)
@@ -297,8 +295,8 @@ func (p *Peer) Discovery() error {
 func (p *Peer) SendPayload(peer string, header []byte, payload []byte) error {
 	conn, err := net.Dial(CONN_TYPE, peer)
 	if err != nil {
-		fmt.Println("Error dialing peer on sending payload: ", err)
-		fmt.Println("Deleting peer: ", peer)
+		log.Println("Error dialing peer on sending payload: ", err)
+		log.Println("Deleting peer: ", peer)
 		p.Store.DeletePeer(peer)
 		return err
 	}
@@ -311,7 +309,7 @@ func (p *Peer) SendPayload(peer string, header []byte, payload []byte) error {
 func (p *Peer) GossipTransaction(transaction Transaction) {
 	peers, err := p.Store.GetPeers()
 	if err != nil {
-		fmt.Println("Error getting peers: ", err)
+		log.Println("Error getting peers: ", err)
 	}
 	transactionJSON, err := json.Marshal(transaction)
 	if err != nil {
@@ -326,7 +324,7 @@ func (p *Peer) GossipTransaction(transaction Transaction) {
 func (p *Peer) GossipBlock(block Block) {
 	peers, err := p.Store.GetPeers()
 	if err != nil {
-		fmt.Println("Error getting peers: ", err)
+		log.Println("Error getting peers: ", err)
 	}
 	blockJSON, err := json.Marshal(block)
 	if err != nil {
