@@ -2,7 +2,7 @@ language: go
 go:
     - "1.10.10"
 before_install:
-    - go get -u github.com/golang/dep/...
+    - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
     - dep ensure
 script:
     - go test ./...
