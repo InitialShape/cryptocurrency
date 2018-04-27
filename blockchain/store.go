@@ -80,7 +80,7 @@ func (s *Store) StoreGenesisBlock(difficulty int) (Block, error) {
 		return Block{}, err
 	}
 
-	s.storeBlock(block)
+	s.AddBlock(block)
 	base58Hash, err := block.GetBase58Hash()
 	if err != nil {
 		return Block{}, err
@@ -295,6 +295,7 @@ func (s *Store) storeBlock(block Block) error {
 			outputCbor, err := output.GetCBOR()
 			if err != nil {
 				log.Fatal("Error encoding output to cbor", err)
+				return err
 			}
 
 			pointer := fmt.Sprintf("-%d", index)

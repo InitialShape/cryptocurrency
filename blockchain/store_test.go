@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/InitialShape/blockchain/blockchain"
 	"github.com/InitialShape/blockchain/miner"
+	"github.com/InitialShape/blockchain/utils"
 	"github.com/mr-tron/base58/base58"
 	"github.com/stretchr/testify/assert"
 	cbor "github.com/whyrusleeping/cbor/go"
@@ -98,7 +99,10 @@ func TestEvaluateChains(t *testing.T) {
 		firstChain,
 	}
 
-	chain := store.EvaluateChains(chains)
+	chain, err := store.EvaluateChains(chains)
+	if err != nil {
+		t.Error(err)
+	}
 	assert.Equal(t, firstChain, chain)
 }
 
@@ -201,8 +205,8 @@ func TestSpendTransactionTwice(t *testing.T) {
 		t.Error(err)
 	}
 
-	publicKey, _, err := ed25519.GenerateKey(rand.Reader)
-	privateKey, _ := base58.Decode("35DxrJipeuCAakHNnnPkBjwxQffYWKM1632kUFv9vKGRNREFSyM6awhyrucxTNbo9h693nPKeWonJ9sFkw6Tou4d")
+	_, privateKey, err := utils.GetWallet()
+	publicKey, _, _ := ed25519.GenerateKey(rand.Reader)
 	outputs := []blockchain.Output{blockchain.Output{publicKey, 123}}
 	inputs := []blockchain.Input{blockchain.Input{[]byte{},
 		genesis.Transactions[0].Hash, 0}}
@@ -214,22 +218,17 @@ func TestSpendTransactionTwice(t *testing.T) {
 	transaction.Hash = hash
 	transaction.Sign(privateKey, 0)
 
-	coinbase, err := blockchain.GenerateCoinbase(publicKey, privateKey, 100)
-	if err != nil {
-		t.Error(err)
-	}
-
 	ch := make(chan blockchain.Block)
 	go miner.SearchBlock(2, 5, genesis.Hash,
-		[]blockchain.Transaction{coinbase, transaction}, ch)
+		[]blockchain.Transaction{transaction}, ch)
 	newBlock := <-ch
 	err = store.AddBlock(newBlock)
 	if err != nil {
 		t.Error(err)
 	}
 
-	publicKey, _, err = ed25519.GenerateKey(rand.Reader)
-	privateKey, _ = base58.Decode("35DxrJipeuCAakHNnnPkBjwxQffYWKM1632kUFv9vKGRNREFSyM6awhyrucxTNbo9h693nPKeWonJ9sFkw6Tou4d")
+	_, privateKey, err = utils.GetWallet()
+	publicKey, _, _ = ed25519.GenerateKey(rand.Reader)
 	outputs = []blockchain.Output{blockchain.Output{publicKey, 123}}
 	inputs = []blockchain.Input{blockchain.Input{[]byte{},
 		genesis.Transactions[0].Hash, 0}}
@@ -243,7 +242,7 @@ func TestSpendTransactionTwice(t *testing.T) {
 
 	ch = make(chan blockchain.Block)
 	go miner.SearchBlock(2, 5, genesis.Hash,
-		[]blockchain.Transaction{coinbase, transaction}, ch)
+		[]blockchain.Transaction{transaction}, ch)
 	newBlock = <-ch
 
 	err = store.AddBlock(newBlock)

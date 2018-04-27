@@ -12,7 +12,7 @@ import (
 	"net/http"
 )
 
-var path = "wallet.txt"
+var path = "/tmp/wallet.txt"
 
 func GenerateWallet() error {
 		publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
