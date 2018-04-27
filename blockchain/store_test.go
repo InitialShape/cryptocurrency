@@ -171,7 +171,7 @@ func TestPutBlockWithTransferTransaction(t *testing.T) {
 	}
 
 	publicKey, _, err := ed25519.GenerateKey(rand.Reader)
-	privateKey, _ := base58.Decode("35DxrJipeuCAakHNnnPkBjwxQffYWKM1632kUFv9vKGRNREFSyM6awhyrucxTNbo9h693nPKeWonJ9sFkw6Tou4d")
+	_, privateKey, _ := utils.GetWallet()
 	outputs := []blockchain.Output{blockchain.Output{publicKey, 123}}
 	inputs := []blockchain.Input{blockchain.Input{[]byte{},
 		genesis.Transactions[0].Hash, 0}}
@@ -183,14 +183,9 @@ func TestPutBlockWithTransferTransaction(t *testing.T) {
 	transaction.Hash = hash
 	transaction.Sign(privateKey, 0)
 
-	coinbase, err := blockchain.GenerateCoinbase(publicKey, privateKey, 100)
-	if err != nil {
-		t.Error(err)
-	}
-
 	ch := make(chan blockchain.Block)
 	go miner.SearchBlock(2, 5, genesis.Hash,
-		[]blockchain.Transaction{coinbase, transaction}, ch)
+		[]blockchain.Transaction{transaction}, ch)
 	newBlock := <-ch
 
 	err = store.AddBlock(newBlock)
