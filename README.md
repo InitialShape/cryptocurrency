@@ -1,5 +1,7 @@
 # Cryptocurrency
 
+[![Build Status](https://travis-ci.org/InitialShape/cryptocurrency.svg?branch=master)](https://travis-ci.org/InitialShape/cryptocurrency)
+
 This is a pet project of the author InitialShape. It's about creating an
 actually working cryptocurrency and blockchain from scratch.
 It's written in Go, not the first language of the author.
