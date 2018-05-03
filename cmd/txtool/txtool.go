@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/InitialShape/blockchain/blockchain"
+	"github.com/InitialShape/cryptocurrency/blockchain"
 	"golang.org/x/crypto/ed25519"
 	"log"
 	"net/http"

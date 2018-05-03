@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/InitialShape/blockchain/blockchain"
-	"github.com/InitialShape/blockchain/miner"
+	"github.com/InitialShape/cryptocurrency/blockchain"
+	"github.com/InitialShape/cryptocurrency/miner"
 	"log"
 	"os"
 	"strconv"

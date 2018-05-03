@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/InitialShape/blockchain/blockchain"
-	"github.com/InitialShape/blockchain/web"
-	"github.com/InitialShape/blockchain/utils"
+	"github.com/InitialShape/cryptocurrency/blockchain"
+	"github.com/InitialShape/cryptocurrency/web"
+	"github.com/InitialShape/cryptocurrency/utils"
 	"log"
 	"net/http"
 	"os"

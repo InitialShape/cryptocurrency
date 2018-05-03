@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/boltdb/bolt"
 	cbor "github.com/whyrusleeping/cbor/go"
-	"github.com/InitialShape/blockchain/utils"
+	"github.com/InitialShape/cryptocurrency/utils"
 	"log"
 	"time"
 )
@@ -19,6 +19,7 @@ type Store struct {
 func (s *Store) Open(location string, peer *Peer) error {
 	db, err := bolt.Open(location, 0600, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 	s.DB = db
@@ -85,7 +86,7 @@ func (s *Store) StoreGenesisBlock(difficulty int) (Block, error) {
 	if err != nil {
 		return Block{}, err
 	}
-	fmt.Println(base58Hash)
+	log.Println(base58Hash)
 	return block, err
 }
 

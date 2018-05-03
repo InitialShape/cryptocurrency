@@ -3,7 +3,7 @@ package web
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/InitialShape/blockchain/blockchain"
+	"github.com/InitialShape/cryptocurrency/blockchain"
 	"github.com/gorilla/mux"
 	"github.com/mr-tron/base58/base58"
 	cbor "github.com/whyrusleeping/cbor/go"
