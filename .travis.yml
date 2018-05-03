@@ -1,16 +1,12 @@
 language: go
+sudo: false
 go:
-- 1.10.10
 - tip
 before_install:
 - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 - dep ensure
 - go run main.go --generate_keys
 install:
-- go get golang.org/x/tools/cmd/cover
 - go get github.com/mattn/goveralls
 script:
-    - go test -v -covermode=count -coverprofile=coverage.out $(go env GOPATH | awk 'BEGIN{FS=":"} {print $1}')/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
-env:
-  global:
-    secure: FZF9RZakFfcbl2TwQa7tSMUI7KWoMV9sqTv1aOQJIVc+XgAVcKjj0/7UwQQwsF6VeZ6WNVidJ/pzSWHq2pSOpRBurTjPw/XO+HNoroxjjrNhBkpoJVSaguG3PPJB+qb/nFwD+2nJ1aeXSLXxSSWP18tQx1EECkmi+AjfwoEh1Xskd27O4vM4Zt92QJarikofo2By6cCp/Y7DR5b2pMt475zgPNeq6F7IaDiIGzoHkRdZMBWPEwGt/Nt2GyVR7eDhY8Zijo9TZBYhBaeicTLHzIyBm6TjYIGYRM2X/4mMbTWWY7gbokmjcxkGPwD8K0NkOwePvgYqYOuE0zKuyQcp8qch6xdLPgWq/irZrvlxNdMR9lIS9P/t2FGqeyrCN1Xaw46w+sDh1m7jUvGZKwismkEO5qF/CqheJ2kuN8AF02uuV4dhBz2QmR0eP1QNYwbzWyDijOhkFtN2CGWEfX1ihCUin+GEOGxtTEZ2Ssb8CgaVP1Ldc7PnFqHwrx5PVQaDxevtCh480iZ//vKgPaK3IXSD0jHogIrHcIzjyUIdnJGeO+C4eZ8qKby6ivEYGGxaewwf0/5heeflPyCvZgfRC+6LnhmbKk7w3FTNfzS+DcLLfmeUi0yxFCtQUlLq+jWhsdOlhKJlxGuYSLonRvtYCi6S1ifc+fG7CWyck+kyJys=
+    - $GOPATH/bin/goveralls -service=travis-ci
