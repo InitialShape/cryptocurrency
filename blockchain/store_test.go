@@ -14,7 +14,7 @@ import (
 	"testing"
 )
 
-const DB = "/tmp/db321"
+const DB = "/tmp/db098"
 
 var (
 	store blockchain.Store
@@ -24,7 +24,8 @@ var (
 func init() {
 	store = blockchain.Store{}
 	store.Open(DB, &peer)
-	peer = blockchain.Peer{"localhost", "1234", store}
+	peer = blockchain.Peer{"1234", "localhost", store}
+	go peer.Start()
 }
 
 func TestPutBlock(t *testing.T) {
