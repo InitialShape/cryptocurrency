@@ -1,6 +1,7 @@
 # Cryptocurrency
 
 [![Build Status](https://travis-ci.org/InitialShape/cryptocurrency.svg?branch=master)](https://travis-ci.org/InitialShape/cryptocurrency)
+[![Coverage Status](https://coveralls.io/repos/github/InitialShape/cryptocurrency/badge.svg?branch=master)](https://coveralls.io/github/InitialShape/cryptocurrency?branch=master)
 
 This is a pet project of the author InitialShape. It's about creating an
 actually working cryptocurrency and blockchain from scratch.
